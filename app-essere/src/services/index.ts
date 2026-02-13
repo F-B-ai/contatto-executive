@@ -4,3 +4,4 @@ export * from './userService';
 export * from './sessionService';
 export * from './programService';
 export * from './calendarService';
+export * from './paymentService';
