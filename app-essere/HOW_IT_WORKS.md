@@ -201,9 +201,17 @@ app-essere/
     ├── screens/            # Schermate organizzate per ruolo
     │   ├── auth/           # Login, Register, ForgotPassword
     │   ├── titolare/       # Dashboard, Economia, Spese, Collaboratori
-    │   ├── collaboratore/  # Home collaboratore
+    │   ├── collaboratore/  # Home, Economia collaboratore
     │   ├── allievo/        # Home allievo
-    │   └── shared/         # Schermate condivise tra ruoli
+    │   ├── shared/         # Schermate condivise tra ruoli
+    │   ├── chat/           # ChatList, Chat
+    │   ├── diario/         # Diario, NuovaDiarioEntry
+    │   ├── test-posturale/ # TestPosturale, Lista, Dettaglio
+    │   ├── contenuti/      # Contenuti, Dettaglio, Nuovo
+    │   ├── settings/       # Profilo, Impostazioni
+    │   ├── allievi/        # AllievoDetail, NuovoAllievo
+    │   ├── collaboratori/  # CollaboratoreDetail, NuovoCollaboratore
+    │   └── programmi/      # Programmi, Dettaglio, Nuovo
     │
     ├── services/           # Logica business e Firebase
     │   ├── firebase.ts     # Configurazione Firebase
@@ -211,15 +219,23 @@ app-essere/
     │   ├── sessionService.ts   # Gestione sessioni
     │   ├── paymentService.ts   # Gestione pagamenti
     │   ├── programService.ts   # Gestione programmi
-    │   └── calendarService.ts  # Gestione calendario
+    │   ├── calendarService.ts  # Gestione calendario
+    │   ├── chatService.ts      # Sistema chat
+    │   ├── diarioService.ts    # Diario allievo
+    │   ├── testPosturaleService.ts # Test posturali con AI
+    │   ├── contenutoService.ts # Contenuti speciali
+    │   └── notificheService.ts # Notifiche push
     │
     ├── context/            # React Context per stato globale
     │   └── AuthContext.tsx # Stato autenticazione
     │
     ├── navigation/         # Configurazione navigazione
-    │   ├── AppNavigator.tsx    # Router principale
-    │   ├── AuthNavigator.tsx   # Router autenticazione
-    │   └── types.ts            # Tipi navigazione
+    │   ├── AppNavigator.tsx        # Router principale
+    │   ├── AuthNavigator.tsx       # Router autenticazione
+    │   ├── TitolareNavigator.tsx   # Tab Navigator titolare
+    │   ├── CollaboratoreNavigator.tsx # Tab Navigator collaboratore
+    │   ├── AllievoNavigator.tsx    # Tab Navigator allievo
+    │   └── types.ts                # Tipi navigazione
     │
     ├── constants/          # Costanti e configurazione
     │   └── theme.ts        # Colori, spacing, regole business
@@ -444,15 +460,18 @@ Verifica di aver configurato correttamente `src/services/firebase.ts` con le tue
 
 ---
 
-## Prossimi Passi
+## Funzionalità Implementate
 
-Funzionalità pianificate ma non ancora implementate:
+L'app include tutte le funzionalità core:
 
-- [ ] Sistema Chat
-- [ ] Notifiche Push
-- [ ] Test Posturali con AI
-- [ ] Diario Allievo
-- [ ] Contenuti Speciali (podcast, video)
+- [x] Sistema Chat in tempo reale
+- [x] Notifiche Push (reminder sessioni, pagamenti, messaggi)
+- [x] Test Posturali con analisi AI
+- [x] Diario Allievo con foto
+- [x] Contenuti Speciali (video, podcast, documenti)
+- [x] Bottom Tab Navigation per ogni ruolo
+- [x] Profilo e Impostazioni utente
+- [x] Gestione Programmi ed Esercizi completa
 
 ---
 

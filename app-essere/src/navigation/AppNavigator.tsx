@@ -5,12 +5,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { Loading } from '../components/common';
 import { AuthNavigator } from './AuthNavigator';
+import { TitolareNavigator } from './TitolareNavigator';
+import { CollaboratoreNavigator } from './CollaboratoreNavigator';
+import { AllievoNavigator } from './AllievoNavigator';
 import { RootStackParamList } from './types';
-
-// Import home screens per ogni ruolo
-import { DashboardScreen as TitolareDashboard } from '../screens/titolare';
-import { HomeScreen as CollaboratoreHome } from '../screens/collaboratore';
-import { HomeScreen as AllievoHome } from '../screens/allievo';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -22,7 +20,7 @@ export const AppNavigator: React.FC = () => {
   }
 
   // Determina quale navigator mostrare in base al ruolo
-  const getHomeScreen = () => {
+  const getHomeNavigator = () => {
     if (!user) return null;
 
     switch (user.ruolo) {
@@ -30,36 +28,24 @@ export const AppNavigator: React.FC = () => {
         return (
           <Stack.Screen
             name="Titolare"
-            component={TitolareDashboard}
-            options={{
-              headerShown: true,
-              title: 'Dashboard',
-              headerLargeTitle: true,
-            }}
+            component={TitolareNavigator}
+            options={{ headerShown: false }}
           />
         );
       case 'collaboratore':
         return (
           <Stack.Screen
             name="Collaboratore"
-            component={CollaboratoreHome}
-            options={{
-              headerShown: true,
-              title: 'Home',
-              headerLargeTitle: true,
-            }}
+            component={CollaboratoreNavigator}
+            options={{ headerShown: false }}
           />
         );
       case 'allievo':
         return (
           <Stack.Screen
             name="Allievo"
-            component={AllievoHome}
-            options={{
-              headerShown: true,
-              title: 'Home',
-              headerLargeTitle: true,
-            }}
+            component={AllievoNavigator}
+            options={{ headerShown: false }}
           />
         );
       default:
@@ -73,7 +59,7 @@ export const AppNavigator: React.FC = () => {
         {!isAuthenticated ? (
           <Stack.Screen name="Auth" component={AuthNavigator} />
         ) : (
-          getHomeScreen()
+          getHomeNavigator()
         )}
       </Stack.Navigator>
     </NavigationContainer>
