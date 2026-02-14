@@ -1,116 +1,93 @@
-// App ESSĒRE - Collaboratore Home Screen
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Card, Avatar, Button } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
-import { Card, Button } from '../../components/common';
-import { COLORS, SPACING, FONT_SIZE, SHADOWS } from '../../constants/theme';
+import { COLORS, SPACING, TYPOGRAPHY } from '../../constants/theme';
 
 export const HomeScreen: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
 
-  // Dati mock
+  // Mock data
   const stats = {
-    allievi: 8,
-    sessioni_oggi: 3,
-    guadagno_mese: 1800,
+    sessioniOggi: 5,
+    allieviAttivi: 8,
+    guadagnoMese: 1920,
+    sessioniMese: 32,
   };
 
+  const prossimiAppuntamenti = [
+    { id: '1', allievo: 'Marco Bianchi', ora: '09:00', tipo: 'Allenamento' },
+    { id: '2', allievo: 'Anna Verdi', ora: '10:30', tipo: 'Valutazione' },
+    { id: '3', allievo: 'Giulia Rossi', ora: '14:00', tipo: 'Allenamento' },
+  ];
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerLeft}>
           <Text style={styles.greeting}>Ciao, {user?.nome}!</Text>
-          <Text style={styles.role}>Coach</Text>
-        </View>
-        <TouchableOpacity style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {user?.nome?.charAt(0)}{user?.cognome?.charAt(0)}
+          <Text style={styles.date}>
+            {new Date().toLocaleDateString('it-IT', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+            })}
           </Text>
+        </View>
+        <TouchableOpacity onPress={logout}>
+          <Avatar name={`${user?.nome} ${user?.cognome}`} backgroundColor={COLORS.collaboratore} />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.statsRow}>
-        <View style={[styles.statCard, { borderTopColor: COLORS.collaboratore }]}>
-          <Text style={styles.statValue}>{stats.allievi}</Text>
-          <Text style={styles.statTitle}>I miei allievi</Text>
-        </View>
-        <View style={[styles.statCard, { borderTopColor: COLORS.primary }]}>
-          <Text style={styles.statValue}>{stats.sessioni_oggi}</Text>
-          <Text style={styles.statTitle}>Sessioni oggi</Text>
-        </View>
-        <View style={[styles.statCard, { borderTopColor: COLORS.secondary }]}>
-          <Text style={styles.statValue}>€{stats.guadagno_mese}</Text>
-          <Text style={styles.statTitle}>Questo mese</Text>
-        </View>
+      {/* Stats */}
+      <View style={styles.statsGrid}>
+        <Card style={[styles.statCard, { backgroundColor: COLORS.collaboratore }]}>
+          <Text style={styles.statNumber}>{stats.sessioniOggi}</Text>
+          <Text style={styles.statLabel}>Sessioni Oggi</Text>
+        </Card>
+        <Card style={[styles.statCard, { backgroundColor: COLORS.allievo }]}>
+          <Text style={styles.statNumber}>{stats.allieviAttivi}</Text>
+          <Text style={styles.statLabel}>I Miei Allievi</Text>
+        </Card>
       </View>
 
-      <Card style={styles.section}>
-        <Text style={styles.sectionTitle}>Le mie sessioni di oggi</Text>
-        <View style={styles.sessionItem}>
-          <View style={styles.sessionTime}>
-            <Text style={styles.timeText}>09:00</Text>
-            <Text style={styles.timeSubtext}>10:00</Text>
+      {/* Guadagno del mese */}
+      <Card title="Il Mio Guadagno" style={styles.card}>
+        <View style={styles.guadagnoContainer}>
+          <View style={styles.guadagnoItem}>
+            <Text style={styles.guadagnoLabel}>Questo mese</Text>
+            <Text style={styles.guadagnoValue}>{stats.guadagnoMese}</Text>
           </View>
-          <View style={styles.sessionInfo}>
-            <Text style={styles.sessionName}>Mario Rossi</Text>
-            <Text style={styles.sessionType}>Allenamento</Text>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: COLORS.success + '20' }]}>
-            <Text style={[styles.statusText, { color: COLORS.success }]}>Confermata</Text>
-          </View>
-        </View>
-        <View style={styles.sessionItem}>
-          <View style={styles.sessionTime}>
-            <Text style={styles.timeText}>11:30</Text>
-            <Text style={styles.timeSubtext}>12:30</Text>
-          </View>
-          <View style={styles.sessionInfo}>
-            <Text style={styles.sessionName}>Laura Bianchi</Text>
-            <Text style={styles.sessionType}>Valutazione</Text>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: COLORS.info + '20' }]}>
-            <Text style={[styles.statusText, { color: COLORS.info }]}>In attesa</Text>
-          </View>
-        </View>
-        <View style={styles.sessionItem}>
-          <View style={styles.sessionTime}>
-            <Text style={styles.timeText}>15:00</Text>
-            <Text style={styles.timeSubtext}>16:00</Text>
-          </View>
-          <View style={styles.sessionInfo}>
-            <Text style={styles.sessionName}>Paolo Verdi</Text>
-            <Text style={styles.sessionType}>Allenamento</Text>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: COLORS.success + '20' }]}>
-            <Text style={[styles.statusText, { color: COLORS.success }]}>Confermata</Text>
+          <View style={styles.guadagnoItem}>
+            <Text style={styles.guadagnoLabel}>Sessioni</Text>
+            <Text style={styles.guadagnoValue}>{stats.sessioniMese}</Text>
           </View>
         </View>
       </Card>
 
-      <Card style={styles.section}>
-        <Text style={styles.sectionTitle}>I miei allievi</Text>
-        {['Mario Rossi', 'Laura Bianchi', 'Paolo Verdi', 'Giulia Neri'].map((name, i) => (
-          <TouchableOpacity key={i} style={styles.allievoItem}>
-            <View style={styles.allievoAvatar}>
-              <Text style={styles.allievoInitials}>
-                {name.split(' ').map(n => n[0]).join('')}
-              </Text>
+      {/* Prossimi Appuntamenti */}
+      <Card title="Oggi" style={styles.card}>
+        {prossimiAppuntamenti.map((app) => (
+          <View key={app.id} style={styles.appointmentRow}>
+            <View style={styles.appointmentTime}>
+              <Text style={styles.appointmentTimeText}>{app.ora}</Text>
             </View>
-            <View style={styles.allievoInfo}>
-              <Text style={styles.allievoName}>{name}</Text>
-              <Text style={styles.allievoSessions}>12 sessioni completate</Text>
+            <View style={styles.appointmentInfo}>
+              <Text style={styles.appointmentName}>{app.allievo}</Text>
+              <Text style={styles.appointmentType}>{app.tipo}</Text>
             </View>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
+          </View>
         ))}
       </Card>
 
-      <Button
-        title="Logout"
-        onPress={signOut}
-        variant="outline"
-        style={styles.logoutButton}
-      />
+      {/* Quick Actions */}
+      <View style={styles.quickActions}>
+        <Button title="+ Nuova Sessione" onPress={() => {}} variant="primary" />
+        <Button title="Crea Programma" onPress={() => {}} variant="outline" />
+      </View>
+
+      <View style={styles.bottomPadding} />
     </ScrollView>
   );
 };
@@ -120,154 +97,95 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xxl,
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.lg,
-    paddingTop: SPACING.md,
+    padding: SPACING.lg,
   },
+  headerLeft: {},
   greeting: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: '700',
+    ...TYPOGRAPHY.h2,
     color: COLORS.textPrimary,
   },
-  role: {
-    fontSize: FONT_SIZE.md,
-    color: COLORS.collaboratore,
-    fontWeight: '500',
+  date: {
+    ...TYPOGRAPHY.body,
+    color: COLORS.textSecondary,
+    textTransform: 'capitalize',
   },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.collaboratore,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: COLORS.white,
-    fontSize: FONT_SIZE.lg,
-    fontWeight: '600',
-  },
-  statsRow: {
+  statsGrid: {
     flexDirection: 'row',
+    paddingHorizontal: SPACING.lg,
     gap: SPACING.sm,
-    marginBottom: SPACING.lg,
   },
   statCard: {
     flex: 1,
-    backgroundColor: COLORS.surface,
+    alignItems: 'center',
     padding: SPACING.md,
-    borderRadius: 12,
-    borderTopWidth: 3,
-    alignItems: 'center',
-    ...SHADOWS.sm,
   },
-  statValue: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  statTitle: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  section: {
-    marginBottom: SPACING.md,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.md,
-  },
-  sessionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  sessionTime: {
-    width: 50,
-    marginRight: SPACING.md,
-  },
-  timeText: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  timeSubtext: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
-  },
-  sessionInfo: {
-    flex: 1,
-  },
-  sessionName: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '500',
-    color: COLORS.textPrimary,
-  },
-  sessionType: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-  },
-  statusBadge: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: '600',
-  },
-  allievoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  allievoAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.allievo,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: SPACING.md,
-  },
-  allievoInitials: {
+  statNumber: {
+    ...TYPOGRAPHY.h1,
     color: COLORS.white,
-    fontWeight: '600',
   },
-  allievoInfo: {
-    flex: 1,
+  statLabel: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.white,
+    opacity: 0.9,
   },
-  allievoName: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '500',
-    color: COLORS.textPrimary,
+  card: {
+    margin: SPACING.lg,
+    marginTop: SPACING.md,
   },
-  allievoSessions: {
-    fontSize: FONT_SIZE.sm,
+  guadagnoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  guadagnoItem: {
+    alignItems: 'center',
+  },
+  guadagnoLabel: {
+    ...TYPOGRAPHY.caption,
     color: COLORS.textSecondary,
   },
-  chevron: {
-    fontSize: 24,
-    color: COLORS.textDisabled,
+  guadagnoValue: {
+    ...TYPOGRAPHY.h2,
+    color: COLORS.success,
   },
-  logoutButton: {
-    marginTop: SPACING.lg,
+  appointmentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray200,
+  },
+  appointmentTime: {
+    backgroundColor: COLORS.collaboratore,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: 4,
+    marginRight: SPACING.md,
+  },
+  appointmentTimeText: {
+    color: COLORS.white,
+    fontWeight: 'bold',
+  },
+  appointmentInfo: {
+    flex: 1,
+  },
+  appointmentName: {
+    ...TYPOGRAPHY.body,
+    fontWeight: '600',
+  },
+  appointmentType: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textSecondary,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    padding: SPACING.lg,
+    gap: SPACING.md,
+  },
+  bottomPadding: {
+    height: SPACING.xxl,
   },
 });
-
-export default HomeScreen;

@@ -1,9 +1,9 @@
-// App ESSĒRE - Type Definitions
+// ============================================
+// TIPI UTENTE E RUOLI
+// ============================================
 
-// Ruoli utente
 export type UserRole = 'titolare' | 'collaboratore' | 'allievo';
 
-// Utente base
 export interface User {
   id: string;
   email: string;
@@ -16,7 +16,6 @@ export interface User {
   updatedAt: Date;
 }
 
-// Collaboratore
 export interface Collaboratore {
   id: string;
   userId: string;
@@ -26,7 +25,6 @@ export interface Collaboratore {
   attivo: boolean;
 }
 
-// Allievo
 export interface Allievo {
   id: string;
   userId: string;
@@ -37,11 +35,13 @@ export interface Allievo {
   attivo: boolean;
 }
 
-// Stato sessione
-export type StatoSessione = 'programmata' | 'completata' | 'annullata';
-export type TipoSessione = 'allenamento' | 'consulenza_nutrizionale' | 'valutazione';
+// ============================================
+// SESSIONI E CALENDARIO
+// ============================================
 
-// Sessione
+export type TipoSessione = 'allenamento' | 'consulenza' | 'valutazione';
+export type StatoSessione = 'programmata' | 'completata' | 'annullata';
+
 export interface Sessione {
   id: string;
   allievoId: string;
@@ -50,76 +50,67 @@ export interface Sessione {
   durata: number; // minuti
   tipo: TipoSessione;
   stato: StatoSessione;
-  annullataOrePrima?: number;
   noteCollaboratore?: string;
   programmaId?: string;
-  esercizi?: EsercizioSessione[];
 }
 
-// Esercizio nella sessione
-export interface EsercizioSessione {
+export interface EventoCalendario {
+  id: string;
+  titolo: string;
+  descrizione?: string;
+  data: Date;
+  oraInizio: string;
+  oraFine: string;
+  userId: string;
+  allievoId?: string;
+  collaboratoreId?: string;
+  sessioneId?: string;
+  colore: string;
+}
+
+// ============================================
+// PROGRAMMI E ESERCIZI
+// ============================================
+
+export interface Esercizio {
+  id: string;
+  nome: string;
+  descrizione?: string;
+  categoria: string;
+  videoUrl?: string;
+  immagineUrl?: string;
+  istruzioni?: string;
+}
+
+export interface EsercizioInProgramma {
   esercizioId: string;
   serie: number;
-  ripetizioni: number | string; // può essere "12-15" o un numero
+  ripetizioni: string; // es. "8-12" o "10"
   recupero: number; // secondi
   note?: string;
 }
 
-// Esercizio (libreria)
-export interface Esercizio {
-  id: string;
-  nome: string;
-  descrizione: string;
-  categoria: CategoriaEsercizio;
-  videoUrl?: string;
-  immagineUrl?: string;
-  istruzioni: string;
+export interface SessioneProgramma {
+  giorno: number;
+  esercizi: EsercizioInProgramma[];
 }
 
-export type CategoriaEsercizio =
-  | 'forza'
-  | 'mobilita'
-  | 'cardio'
-  | 'core'
-  | 'stretching'
-  | 'funzionale'
-  | 'posturale';
-
-// Programma allenamento
 export interface Programma {
   id: string;
   nome: string;
-  descrizione: string;
+  descrizione?: string;
   durataSettimane: number;
-  creatoDa: string; // userId
+  creatoDa: string;
   sessioni: SessioneProgramma[];
-  assegnatoA: string[]; // allievoIds
-  createdAt: Date;
-  updatedAt: Date;
+  assegnatoA: string[];
 }
 
-export interface SessioneProgramma {
-  giorno: number; // 1-7
-  settimana: number;
-  esercizi: EsercizioSessione[];
-}
+// ============================================
+// SISTEMA ECONOMICO
+// ============================================
 
-// Pagamento
 export type ModalitaPagamento = 'unica' | 'rate';
-
-export interface Pagamento {
-  id: string;
-  allievoId: string;
-  collaboratoreId: string;
-  descrizione: string;
-  importoTotale: number;
-  modalita: ModalitaPagamento;
-  rate: Rata[];
-  percentualeCollaboratore: number;
-  guadagnoCollaboratore: number;
-  quotaTitolare: number;
-  createdAt: Date;
-}
+export type StatoRata = 'pagata' | 'in_scadenza' | 'scaduta';
 
 export interface Rata {
   numero: number;
@@ -129,23 +120,27 @@ export interface Rata {
   dataPagamento?: Date;
 }
 
-// Spese e Ricavi
+export interface Pagamento {
+  id: string;
+  allievoId: string;
+  collaboratoreId: string;
+  importoTotale: number;
+  modalita: ModalitaPagamento;
+  rate: Rata[];
+  percentualeCollaboratore: number;
+  guadagnoCollaboratore: number;
+  quotaTitolare: number;
+  createdAt: Date;
+}
+
 export interface Spesa {
   id: string;
   descrizione: string;
   importo: number;
-  categoria: CategoriaSpesa;
+  categoria: string;
   data: Date;
   ricorrente: boolean;
 }
-
-export type CategoriaSpesa =
-  | 'affitto'
-  | 'attrezzature'
-  | 'marketing'
-  | 'utenze'
-  | 'personale'
-  | 'altro';
 
 export interface Ricavo {
   id: string;
@@ -156,8 +151,65 @@ export interface Ricavo {
   pagamentoId?: string;
 }
 
-// Test Posturale
+// ============================================
+// CHAT E CONTENUTI
+// ============================================
+
+export type TipoConversazione = '1to1' | 'gruppo';
+
+export interface Messaggio {
+  id: string;
+  mittente: string;
+  testo: string;
+  allegati?: string[];
+  letto: boolean;
+  createdAt: Date;
+}
+
+export interface Conversazione {
+  id: string;
+  partecipanti: string[];
+  tipo: TipoConversazione;
+  ultimoMessaggio?: string;
+  ultimoMessaggioAt?: Date;
+}
+
+export type TipoContenuto = 'podcast' | 'video' | 'documento' | 'link';
+
+export interface Contenuto {
+  id: string;
+  titolo: string;
+  descrizione?: string;
+  tipo: TipoContenuto;
+  url: string;
+  categoria: string;
+  creatoDa: string;
+  visibileA: 'tutti' | string[];
+  createdAt: Date;
+}
+
+// ============================================
+// DIARIO E TEST POSTURALI
+// ============================================
+
+export interface DiarioEntry {
+  id: string;
+  allievoId: string;
+  data: Date;
+  umore: number; // 1-10
+  note?: string;
+  immagini?: string[];
+  condiviso: boolean;
+  createdAt: Date;
+}
+
 export type TipoImmaginePosturale = 'fronte' | 'lato_dx' | 'lato_sx' | 'retro';
+
+export interface ImmaginePosturale {
+  url: string;
+  tipo: TipoImmaginePosturale;
+  analisiAI?: Record<string, unknown>;
+}
 
 export interface TestPosturale {
   id: string;
@@ -170,112 +222,43 @@ export interface TestPosturale {
   report?: string;
 }
 
-export interface ImmaginePosturale {
-  url: string;
-  tipo: TipoImmaginePosturale;
-  analisiAI?: AnalisiAI;
-}
+// ============================================
+// NAVIGAZIONE
+// ============================================
 
-export interface AnalisiAI {
-  puntiRilevati: PuntoCorpo[];
-  problemiRilevati: string[];
-  suggerimenti: string[];
-}
-
-export interface PuntoCorpo {
-  nome: string;
-  x: number;
-  y: number;
-  confidenza: number;
-}
-
-// Contenuti speciali
-export type TipoContenuto = 'podcast' | 'video' | 'documento' | 'link';
-
-export interface Contenuto {
-  id: string;
-  titolo: string;
-  descrizione: string;
-  tipo: TipoContenuto;
-  url: string;
-  categoria: string;
-  creatoDa: string;
-  visibileA: 'tutti' | string[]; // 'tutti' o array di allievoIds
-  createdAt: Date;
-}
-
-// Diario
-export interface DiarioEntry {
-  id: string;
-  allievoId: string;
-  data: Date;
-  umore: number; // 1-10
-  note?: string;
-  immagini?: string[];
-  condiviso: boolean;
-  createdAt: Date;
-}
-
-// Chat
-export type TipoChat = '1to1' | 'gruppo';
-
-export interface Conversazione {
-  id: string;
-  partecipanti: string[]; // userIds
-  tipo: TipoChat;
-  ultimoMessaggio?: string;
-  ultimoMessaggioAt?: Date;
-}
-
-export interface Messaggio {
-  id: string;
-  conversazioneId: string;
-  mittente: string; // userId
-  testo: string;
-  allegati?: Allegato[];
-  letto: boolean;
-  createdAt: Date;
-}
-
-export interface Allegato {
-  tipo: 'immagine' | 'documento';
-  url: string;
-  nome: string;
-}
-
-// Calendario
-export interface EventoCalendario {
-  id: string;
-  titolo: string;
-  descrizione?: string;
-  data: Date;
-  oraInizio: string; // "HH:mm"
-  oraFine: string;   // "HH:mm"
-  tipo: 'sessione' | 'evento' | 'reminder';
-  userId: string; // proprietario
-  allievoId?: string;
-  collaboratoreId?: string;
-  sessioneId?: string;
-  colore: string;
-}
-
-// Auth State
-export interface AuthState {
-  user: User | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-}
-
-// Navigation Types
 export type RootStackParamList = {
   Auth: undefined;
-  TitolareHome: undefined;
-  CollaboratoreHome: undefined;
-  AllievoHome: undefined;
+  Titolare: undefined;
+  Collaboratore: undefined;
+  Allievo: undefined;
 };
 
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
+};
+
+export type TitolareTabParamList = {
+  Dashboard: undefined;
+  Calendario: undefined;
+  Collaboratori: undefined;
+  Allievi: undefined;
+  Economia: undefined;
+};
+
+export type CollaboratoreTabParamList = {
+  Home: undefined;
+  Calendario: undefined;
+  Allievi: undefined;
+  Economia: undefined;
+  Programmi: undefined;
+};
+
+export type AllievoTabParamList = {
+  Home: undefined;
+  Programma: undefined;
+  Calendario: undefined;
+  Contenuti: undefined;
+  Profilo: undefined;
 };

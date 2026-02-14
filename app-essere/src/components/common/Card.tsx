@@ -1,62 +1,70 @@
-// App ESSĒRE - Card Component
 import React from 'react';
-import { View, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { COLORS, SPACING, BORDERS, SHADOWS, TYPOGRAPHY } from '../../constants/theme';
 
 interface CardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
-  variant?: 'elevated' | 'outlined' | 'filled';
+  title?: string;
+  subtitle?: string;
   onPress?: () => void;
-  padding?: 'none' | 'sm' | 'md' | 'lg';
+  style?: ViewStyle;
+  padding?: 'none' | 'small' | 'medium' | 'large';
 }
 
 export const Card: React.FC<CardProps> = ({
   children,
-  style,
-  variant = 'elevated',
+  title,
+  subtitle,
   onPress,
-  padding = 'md',
+  style,
+  padding = 'medium',
 }) => {
-  const getCardStyle = (): ViewStyle => {
-    const baseStyle: ViewStyle = {
-      backgroundColor: COLORS.surface,
-      borderRadius: BORDER_RADIUS.lg,
-    };
-
-    const variantStyles: Record<string, ViewStyle> = {
-      elevated: { ...SHADOWS.md },
-      outlined: { borderWidth: 1, borderColor: COLORS.border },
-      filled: { backgroundColor: COLORS.background },
-    };
-
-    const paddingStyles: Record<string, ViewStyle> = {
-      none: {},
-      sm: { padding: SPACING.sm },
-      md: { padding: SPACING.md },
-      lg: { padding: SPACING.lg },
-    };
-
-    return {
-      ...baseStyle,
-      ...variantStyles[variant],
-      ...paddingStyles[padding],
-    };
+  const paddingStyle = {
+    none: 0,
+    small: SPACING.sm,
+    medium: SPACING.md,
+    large: SPACING.lg,
   };
+
+  const content = (
+    <View style={[styles.card, { padding: paddingStyle[padding] }, style]}>
+      {(title || subtitle) && (
+        <View style={styles.header}>
+          {title && <Text style={styles.title}>{title}</Text>}
+          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        </View>
+      )}
+      {children}
+    </View>
+  );
 
   if (onPress) {
     return (
-      <TouchableOpacity
-        style={[getCardStyle(), style]}
-        onPress={onPress}
-        activeOpacity={0.7}
-      >
-        {children}
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        {content}
       </TouchableOpacity>
     );
   }
 
-  return <View style={[getCardStyle(), style]}>{children}</View>;
+  return content;
 };
 
-export default Card;
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDERS.radiusLarge,
+    ...SHADOWS.medium,
+  },
+  header: {
+    marginBottom: SPACING.sm,
+  },
+  title: {
+    ...TYPOGRAPHY.h4,
+    color: COLORS.textPrimary,
+  },
+  subtitle: {
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.xs,
+  },
+});

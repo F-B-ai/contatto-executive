@@ -1,61 +1,61 @@
-// App ESSĒRE - Theme Constants
+// ============================================
+// COLORI APP ESSERE
+// ============================================
 
 export const COLORS = {
   // Colori primari
-  primary: '#1E3A5F',        // Blu scuro - professionale
-  primaryLight: '#2E5A8F',
-  primaryDark: '#0E2A4F',
+  primary: '#1a1a2e',
+  primaryLight: '#16213e',
+  primaryDark: '#0f0f1a',
 
-  // Colori secondari
-  secondary: '#D4AF37',      // Oro - eleganza
-  secondaryLight: '#E4BF47',
-  secondaryDark: '#C49F27',
+  // Accenti
+  accent: '#e94560',
+  accentLight: '#ff6b6b',
+  accentDark: '#c73e54',
 
-  // Colori accent per ruoli
-  titolare: '#1E3A5F',       // Blu - Titolare
-  collaboratore: '#2E7D32',  // Verde - Collaboratore
-  allievo: '#5C6BC0',        // Indaco - Allievo
+  // Successo/Errore/Warning
+  success: '#00d9a5',
+  error: '#ff4757',
+  warning: '#ffa502',
+  info: '#3498db',
 
-  // Stati
-  success: '#4CAF50',
-  warning: '#FFC107',
-  error: '#F44336',
-  info: '#2196F3',
-
-  // Neutrali
-  white: '#FFFFFF',
+  // Neutri
+  white: '#ffffff',
   black: '#000000',
-  background: '#F5F7FA',
-  surface: '#FFFFFF',
-  border: '#E0E0E0',
+  background: '#f8f9fa',
+  surface: '#ffffff',
+
+  // Grigi
+  gray100: '#f7f7f7',
+  gray200: '#eeeeee',
+  gray300: '#e0e0e0',
+  gray400: '#bdbdbd',
+  gray500: '#9e9e9e',
+  gray600: '#757575',
+  gray700: '#616161',
+  gray800: '#424242',
+  gray900: '#212121',
 
   // Testo
   textPrimary: '#212121',
   textSecondary: '#757575',
-  textDisabled: '#BDBDBD',
-  textOnPrimary: '#FFFFFF',
-  textOnSecondary: '#000000',
+  textLight: '#ffffff',
+  textMuted: '#9e9e9e',
 
-  // Calendario - colori per collaboratori
-  calendar: [
-    '#1E88E5', // Blu
-    '#43A047', // Verde
-    '#FB8C00', // Arancio
-    '#8E24AA', // Viola
-    '#E53935', // Rosso
-    '#00ACC1', // Ciano
-  ],
+  // Colori ruoli
+  titolare: '#9b59b6',
+  collaboratore: '#3498db',
+  allievo: '#2ecc71',
 
-  // Stato sessioni
-  sessioneProgrammata: '#2196F3',
-  sessioneCompletata: '#4CAF50',
-  sessioneAnnullata: '#F44336',
-
-  // Pagamenti
-  pagato: '#4CAF50',
-  inScadenza: '#FFC107',
-  scaduto: '#F44336',
+  // Colori calendario
+  calendarToday: '#e94560',
+  calendarSelected: '#1a1a2e',
+  calendarEvent: '#3498db',
 };
+
+// ============================================
+// SPAZIATURE
+// ============================================
 
 export const SPACING = {
   xs: 4,
@@ -66,50 +66,81 @@ export const SPACING = {
   xxl: 48,
 };
 
-export const FONT_SIZE = {
-  xs: 10,
-  sm: 12,
-  md: 14,
-  lg: 16,
-  xl: 18,
-  xxl: 24,
-  xxxl: 32,
-  title: 28,
-  header: 20,
+// ============================================
+// TIPOGRAFIA
+// ============================================
+
+export const TYPOGRAPHY = {
+  h1: {
+    fontSize: 32,
+    fontWeight: 'bold' as const,
+    lineHeight: 40,
+  },
+  h2: {
+    fontSize: 24,
+    fontWeight: 'bold' as const,
+    lineHeight: 32,
+  },
+  h3: {
+    fontSize: 20,
+    fontWeight: '600' as const,
+    lineHeight: 28,
+  },
+  h4: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    lineHeight: 24,
+  },
+  body: {
+    fontSize: 16,
+    fontWeight: 'normal' as const,
+    lineHeight: 24,
+  },
+  bodySmall: {
+    fontSize: 14,
+    fontWeight: 'normal' as const,
+    lineHeight: 20,
+  },
+  caption: {
+    fontSize: 12,
+    fontWeight: 'normal' as const,
+    lineHeight: 16,
+  },
+  button: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    lineHeight: 24,
+  },
 };
 
-export const FONT_WEIGHT = {
-  regular: '400' as const,
-  medium: '500' as const,
-  semibold: '600' as const,
-  bold: '700' as const,
-};
+// ============================================
+// BORDI E OMBRE
+// ============================================
 
-export const BORDER_RADIUS = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  round: 9999,
+export const BORDERS = {
+  radiusSmall: 4,
+  radiusMedium: 8,
+  radiusLarge: 16,
+  radiusXLarge: 24,
+  radiusFull: 9999,
 };
 
 export const SHADOWS = {
-  sm: {
+  small: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
-  md: {
+  medium: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 4,
   },
-  lg: {
+  large: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -118,16 +149,19 @@ export const SHADOWS = {
   },
 };
 
-// Limiti business
-export const BUSINESS_RULES = {
-  oreMinimeAnnullamento: 10, // Ore minime prima della sessione per annullare
-  maxRate: 12,               // Numero massimo rate per pagamento
-  maxAllievi: 100,           // Max allievi per piano free
-  maxCollaboratori: 10,      // Max collaboratori per piano free
-};
+// ============================================
+// DIMENSIONI
+// ============================================
 
-export const APP_CONFIG = {
-  name: 'App ESSĒRE',
-  version: '1.0.0',
-  bundleId: 'com.essere.app',
+export const SIZES = {
+  buttonHeight: 48,
+  inputHeight: 48,
+  iconSmall: 16,
+  iconMedium: 24,
+  iconLarge: 32,
+  avatarSmall: 32,
+  avatarMedium: 48,
+  avatarLarge: 64,
+  headerHeight: 56,
+  tabBarHeight: 60,
 };

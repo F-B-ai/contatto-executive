@@ -1,4 +1,3 @@
-// App ESSĒRE - Input Component
 import React, { useState } from 'react';
 import {
   View,
@@ -7,86 +6,81 @@ import {
   StyleSheet,
   TouchableOpacity,
   ViewStyle,
-  TextInputProps,
 } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from '../../constants/theme';
+import { COLORS, SPACING, BORDERS, SIZES, TYPOGRAPHY } from '../../constants/theme';
 
-interface InputProps extends Omit<TextInputProps, 'style'> {
+interface InputProps {
   label?: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  secureTextEntry?: boolean;
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   error?: string;
-  hint?: string;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
-  containerStyle?: ViewStyle;
-  isPassword?: boolean;
+  disabled?: boolean;
+  multiline?: boolean;
+  numberOfLines?: number;
+  style?: ViewStyle;
+  maxLength?: number;
 }
 
 export const Input: React.FC<InputProps> = ({
   label,
+  value,
+  onChangeText,
+  placeholder,
+  secureTextEntry = false,
+  keyboardType = 'default',
+  autoCapitalize = 'none',
   error,
-  hint,
-  leftIcon,
-  rightIcon,
-  containerStyle,
-  isPassword = false,
-  ...textInputProps
+  disabled = false,
+  multiline = false,
+  numberOfLines = 1,
+  style,
+  maxLength,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const hasError = !!error;
-
-  const getBorderColor = () => {
-    if (hasError) return COLORS.error;
-    if (isFocused) return COLORS.primary;
-    return COLORS.border;
-  };
-
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View style={[styles.container, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
-
       <View
         style={[
           styles.inputContainer,
-          { borderColor: getBorderColor() },
           isFocused && styles.inputFocused,
+          error && styles.inputError,
+          disabled && styles.inputDisabled,
+          multiline && styles.inputMultiline,
         ]}
       >
-        {leftIcon && <View style={styles.iconLeft}>{leftIcon}</View>}
-
         <TextInput
-          style={[
-            styles.input,
-            leftIcon ? { paddingLeft: 0 } : undefined,
-            (rightIcon || isPassword) ? { paddingRight: 0 } : undefined,
-          ]}
-          placeholderTextColor={COLORS.textDisabled}
+          style={[styles.input, multiline && styles.textMultiline]}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={COLORS.gray400}
+          secureTextEntry={secureTextEntry && !showPassword}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          editable={!disabled}
+          multiline={multiline}
+          numberOfLines={numberOfLines}
+          maxLength={maxLength}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          secureTextEntry={isPassword && !showPassword}
-          {...textInputProps}
         />
-
-        {isPassword && (
+        {secureTextEntry && (
           <TouchableOpacity
-            style={styles.iconRight}
+            style={styles.eyeButton}
             onPress={() => setShowPassword(!showPassword)}
           >
-            <Text style={styles.showPasswordText}>
-              {showPassword ? 'Nascondi' : 'Mostra'}
-            </Text>
+            <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
           </TouchableOpacity>
         )}
-
-        {rightIcon && !isPassword && <View style={styles.iconRight}>{rightIcon}</View>}
       </View>
-
-      {(error || hint) && (
-        <Text style={[styles.helperText, hasError && styles.errorText]}>
-          {error || hint}
-        </Text>
-      )}
+      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };
@@ -96,7 +90,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   label: {
-    fontSize: FONT_SIZE.sm,
+    ...TYPOGRAPHY.bodySmall,
     fontWeight: '600',
     color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
@@ -104,39 +98,46 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.md,
+    borderColor: COLORS.gray300,
+    borderRadius: BORDERS.radiusMedium,
+    height: SIZES.inputHeight,
   },
   inputFocused: {
+    borderColor: COLORS.primary,
     borderWidth: 2,
+  },
+  inputError: {
+    borderColor: COLORS.error,
+  },
+  inputDisabled: {
+    backgroundColor: COLORS.gray100,
+  },
+  inputMultiline: {
+    height: 'auto',
+    minHeight: 100,
+    alignItems: 'flex-start',
   },
   input: {
     flex: 1,
-    fontSize: FONT_SIZE.md,
+    paddingHorizontal: SPACING.md,
+    ...TYPOGRAPHY.body,
     color: COLORS.textPrimary,
-    paddingVertical: SPACING.sm + 4,
   },
-  iconLeft: {
-    marginRight: SPACING.sm,
+  textMultiline: {
+    textAlignVertical: 'top',
+    paddingTop: SPACING.sm,
   },
-  iconRight: {
-    marginLeft: SPACING.sm,
+  eyeButton: {
+    padding: SPACING.sm,
   },
-  showPasswordText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.primary,
-    fontWeight: '500',
-  },
-  helperText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
+  eyeIcon: {
+    fontSize: 20,
   },
   errorText: {
+    ...TYPOGRAPHY.caption,
     color: COLORS.error,
+    marginTop: SPACING.xs,
   },
 });
-
-export default Input;

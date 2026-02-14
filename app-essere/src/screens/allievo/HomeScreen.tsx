@@ -1,139 +1,108 @@
-// App ESSĒRE - Allievo Home Screen
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Card, Avatar } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
-import { Card, Button } from '../../components/common';
-import { COLORS, SPACING, FONT_SIZE, SHADOWS } from '../../constants/theme';
+import { COLORS, SPACING, TYPOGRAPHY, BORDERS } from '../../constants/theme';
 
 export const HomeScreen: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
+
+  // Mock data
+  const prossimaSessione = {
+    data: 'Oggi',
+    ora: '14:00',
+    collaboratore: 'Luca',
+    tipo: 'Allenamento',
+  };
+
+  const stats = {
+    sessioniCompletate: 24,
+    settimaneAttive: 8,
+    prossimoObiettivo: '30 sessioni',
+  };
+
+  const programmaOggi = [
+    { id: '1', nome: 'Squat', serie: '4x12', completato: true },
+    { id: '2', nome: 'Leg Press', serie: '3x15', completato: true },
+    { id: '3', nome: 'Affondi', serie: '3x10', completato: false },
+    { id: '4', nome: 'Leg Curl', serie: '3x12', completato: false },
+  ];
+
+  const contenutiNuovi = [
+    { id: '1', tipo: 'video', titolo: 'Tecnica Squat' },
+    { id: '2', tipo: 'podcast', titolo: 'Mindset e Allenamento' },
+  ];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerLeft}>
           <Text style={styles.greeting}>Ciao, {user?.nome}!</Text>
-          <Text style={styles.subtitle}>Continua il tuo percorso</Text>
+          <Text style={styles.motivational}>Continua così!</Text>
         </View>
-        <TouchableOpacity style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {user?.nome?.charAt(0)}{user?.cognome?.charAt(0)}
-          </Text>
+        <TouchableOpacity onPress={logout}>
+          <Avatar name={`${user?.nome} ${user?.cognome}`} backgroundColor={COLORS.allievo} />
         </TouchableOpacity>
       </View>
 
-      {/* Prossima sessione */}
-      <Card style={styles.nextSessionCard}>
-        <Text style={styles.nextSessionLabel}>PROSSIMA SESSIONE</Text>
-        <Text style={styles.nextSessionDate}>Lunedì 17 Febbraio</Text>
-        <Text style={styles.nextSessionTime}>10:00 - 11:00</Text>
-        <View style={styles.nextSessionCoach}>
-          <View style={styles.coachAvatar}>
-            <Text style={styles.coachInitials}>MB</Text>
-          </View>
+      {/* Prossima Sessione */}
+      <Card style={[styles.card, styles.sessioneCard]}>
+        <Text style={styles.sessioneLabel}>Prossima Sessione</Text>
+        <View style={styles.sessioneContent}>
           <View>
-            <Text style={styles.coachName}>Marco Bianchi</Text>
-            <Text style={styles.coachRole}>Il tuo coach</Text>
+            <Text style={styles.sessioneData}>{prossimaSessione.data}, {prossimaSessione.ora}</Text>
+            <Text style={styles.sessioneTipo}>{prossimaSessione.tipo} con {prossimaSessione.collaboratore}</Text>
+          </View>
+          <View style={styles.sessioneCountdown}>
+            <Text style={styles.countdownText}>2h</Text>
           </View>
         </View>
-        <Button
-          title="Vedi dettagli"
-          variant="secondary"
-          size="sm"
-          style={styles.detailsButton}
-          onPress={() => {}}
-        />
-      </Card>
-
-      {/* Programma di oggi */}
-      <Card style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Il tuo allenamento di oggi</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeAll}>Vedi tutto →</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.exerciseList}>
-          {[
-            { nome: 'Squat', serie: '4x12', completato: true },
-            { nome: 'Affondi', serie: '3x10', completato: true },
-            { nome: 'Leg Press', serie: '4x15', completato: false },
-            { nome: 'Calf Raises', serie: '3x20', completato: false },
-          ].map((ex, i) => (
-            <View key={i} style={styles.exerciseItem}>
-              <View style={[styles.checkbox, ex.completato && styles.checkboxDone]}>
-                {ex.completato && <Text style={styles.checkmark}>✓</Text>}
-              </View>
-              <View style={styles.exerciseInfo}>
-                <Text style={[styles.exerciseName, ex.completato && styles.exerciseDone]}>
-                  {ex.nome}
-                </Text>
-                <Text style={styles.exerciseSerie}>{ex.serie}</Text>
-              </View>
-              <TouchableOpacity style={styles.playButton}>
-                <Text style={styles.playIcon}>▶</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '50%' }]} />
-        </View>
-        <Text style={styles.progressText}>2 di 4 esercizi completati</Text>
       </Card>
 
       {/* Stats */}
       <View style={styles.statsRow}>
         <Card style={styles.statCard}>
-          <Text style={styles.statEmoji}>🔥</Text>
-          <Text style={styles.statValue}>12</Text>
+          <Text style={styles.statValue}>{stats.sessioniCompletate}</Text>
           <Text style={styles.statLabel}>Sessioni</Text>
         </Card>
         <Card style={styles.statCard}>
-          <Text style={styles.statEmoji}>📈</Text>
-          <Text style={styles.statValue}>85%</Text>
-          <Text style={styles.statLabel}>Presenza</Text>
-        </Card>
-        <Card style={styles.statCard}>
-          <Text style={styles.statEmoji}>⭐</Text>
-          <Text style={styles.statValue}>4</Text>
+          <Text style={styles.statValue}>{stats.settimaneAttive}</Text>
           <Text style={styles.statLabel}>Settimane</Text>
         </Card>
       </View>
 
-      {/* Contenuti */}
-      <Card style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Nuovi contenuti per te</Text>
-        </View>
-        <TouchableOpacity style={styles.contentItem}>
-          <View style={[styles.contentIcon, { backgroundColor: COLORS.info + '20' }]}>
-            <Text>🎧</Text>
+      {/* Programma Oggi */}
+      <Card title="Il Tuo Programma Oggi" style={styles.card}>
+        {programmaOggi.map((esercizio) => (
+          <View key={esercizio.id} style={styles.esercizioRow}>
+            <View style={[styles.checkbox, esercizio.completato && styles.checkboxCompleted]}>
+              {esercizio.completato && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+            <View style={styles.esercizioInfo}>
+              <Text style={[styles.esercizioNome, esercizio.completato && styles.esercizioCompletato]}>
+                {esercizio.nome}
+              </Text>
+              <Text style={styles.esercizioSerie}>{esercizio.serie}</Text>
+            </View>
           </View>
-          <View style={styles.contentInfo}>
-            <Text style={styles.contentTitle}>Mindset e Performance</Text>
-            <Text style={styles.contentType}>Podcast • 25 min</Text>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.contentItem}>
-          <View style={[styles.contentIcon, { backgroundColor: COLORS.error + '20' }]}>
-            <Text>📹</Text>
-          </View>
-          <View style={styles.contentInfo}>
-            <Text style={styles.contentTitle}>Tecnica Squat Perfetta</Text>
-            <Text style={styles.contentType}>Video • 12 min</Text>
-          </View>
-        </TouchableOpacity>
+        ))}
       </Card>
 
-      <Button
-        title="Logout"
-        onPress={signOut}
-        variant="outline"
-        style={styles.logoutButton}
-      />
+      {/* Contenuti Nuovi */}
+      <Card title="Contenuti Per Te" style={styles.card}>
+        {contenutiNuovi.map((contenuto) => (
+          <TouchableOpacity key={contenuto.id} style={styles.contenutoRow}>
+            <View style={styles.contenutoIcon}>
+              <Text>{contenuto.tipo === 'video' ? '🎬' : '🎧'}</Text>
+            </View>
+            <Text style={styles.contenutoTitolo}>{contenuto.titolo}</Text>
+            <Text style={styles.contenutoArrow}>→</Text>
+          </TouchableOpacity>
+        ))}
+      </Card>
+
+      <View style={styles.bottomPadding} />
     </ScrollView>
   );
 };
@@ -143,238 +112,142 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xxl,
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.lg,
-    paddingTop: SPACING.md,
+    padding: SPACING.lg,
   },
+  headerLeft: {},
   greeting: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: '700',
+    ...TYPOGRAPHY.h2,
     color: COLORS.textPrimary,
   },
-  subtitle: {
-    fontSize: FONT_SIZE.md,
-    color: COLORS.textSecondary,
+  motivational: {
+    ...TYPOGRAPHY.body,
+    color: COLORS.allievo,
   },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.allievo,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: COLORS.white,
-    fontSize: FONT_SIZE.lg,
-    fontWeight: '600',
-  },
-  nextSessionCard: {
-    backgroundColor: COLORS.primary,
-    marginBottom: SPACING.lg,
-  },
-  nextSessionLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.white + '80',
-    fontWeight: '600',
-    letterSpacing: 1,
-  },
-  nextSessionDate: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: '700',
-    color: COLORS.white,
-    marginTop: SPACING.xs,
-  },
-  nextSessionTime: {
-    fontSize: FONT_SIZE.lg,
-    color: COLORS.white,
-  },
-  nextSessionCoach: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: SPACING.md,
-    paddingTop: SPACING.md,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.white + '20',
-  },
-  coachAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.white + '20',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: SPACING.sm,
-  },
-  coachInitials: {
-    color: COLORS.white,
-    fontWeight: '600',
-  },
-  coachName: {
-    color: COLORS.white,
-    fontWeight: '600',
-    fontSize: FONT_SIZE.md,
-  },
-  coachRole: {
-    color: COLORS.white + '80',
-    fontSize: FONT_SIZE.sm,
-  },
-  detailsButton: {
-    marginTop: SPACING.md,
-    alignSelf: 'flex-start',
-  },
-  section: {
+  card: {
+    marginHorizontal: SPACING.md,
     marginBottom: SPACING.md,
   },
-  sectionHeader: {
+  sessioneCard: {
+    backgroundColor: COLORS.allievo,
+  },
+  sessioneLabel: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.white,
+    opacity: 0.8,
+    marginBottom: SPACING.xs,
+  },
+  sessioneContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.md,
   },
-  sectionTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  seeAll: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.primary,
-    fontWeight: '500',
-  },
-  exerciseList: {
-    gap: SPACING.sm,
-  },
-  exerciseItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: SPACING.xs,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: SPACING.md,
-  },
-  checkboxDone: {
-    backgroundColor: COLORS.success,
-    borderColor: COLORS.success,
-  },
-  checkmark: {
+  sessioneData: {
+    ...TYPOGRAPHY.h3,
     color: COLORS.white,
-    fontWeight: '700',
-    fontSize: 14,
   },
-  exerciseInfo: {
-    flex: 1,
+  sessioneTipo: {
+    ...TYPOGRAPHY.body,
+    color: COLORS.white,
+    opacity: 0.9,
   },
-  exerciseName: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '500',
-    color: COLORS.textPrimary,
-  },
-  exerciseDone: {
-    textDecorationLine: 'line-through',
-    color: COLORS.textSecondary,
-  },
-  exerciseSerie: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-  },
-  playButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.primary + '10',
+  sessioneCountdown: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  playIcon: {
-    color: COLORS.primary,
-    fontSize: 12,
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: COLORS.border,
-    borderRadius: 3,
-    marginTop: SPACING.md,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: COLORS.success,
-    borderRadius: 3,
-  },
-  progressText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
-    textAlign: 'center',
+  countdownText: {
+    ...TYPOGRAPHY.h3,
+    color: COLORS.white,
   },
   statsRow: {
     flexDirection: 'row',
+    paddingHorizontal: SPACING.md,
     gap: SPACING.sm,
     marginBottom: SPACING.md,
   },
   statCard: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: SPACING.md,
-  },
-  statEmoji: {
-    fontSize: 24,
-    marginBottom: SPACING.xs,
   },
   statValue: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    ...TYPOGRAPHY.h2,
+    color: COLORS.allievo,
   },
   statLabel: {
-    fontSize: FONT_SIZE.xs,
+    ...TYPOGRAPHY.caption,
     color: COLORS.textSecondary,
   },
-  contentItem: {
+  esercizioRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: SPACING.sm,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: COLORS.gray200,
   },
-  contentIcon: {
-    width: 44,
-    height: 44,
+  checkbox: {
+    width: 24,
+    height: 24,
     borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.gray400,
+    marginRight: SPACING.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxCompleted: {
+    backgroundColor: COLORS.success,
+    borderColor: COLORS.success,
+  },
+  checkmark: {
+    color: COLORS.white,
+    fontWeight: 'bold',
+  },
+  esercizioInfo: {
+    flex: 1,
+  },
+  esercizioNome: {
+    ...TYPOGRAPHY.body,
+  },
+  esercizioCompletato: {
+    textDecorationLine: 'line-through',
+    color: COLORS.textSecondary,
+  },
+  esercizioSerie: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textSecondary,
+  },
+  contenutoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray200,
+  },
+  contenutoIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: COLORS.gray100,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: SPACING.md,
   },
-  contentInfo: {
+  contenutoTitolo: {
+    ...TYPOGRAPHY.body,
     flex: 1,
   },
-  contentTitle: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '500',
-    color: COLORS.textPrimary,
+  contenutoArrow: {
+    fontSize: 20,
+    color: COLORS.gray400,
   },
-  contentType: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-  },
-  logoutButton: {
-    marginTop: SPACING.lg,
+  bottomPadding: {
+    height: SPACING.xxl,
   },
 });
-
-export default HomeScreen;

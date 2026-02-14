@@ -1,125 +1,108 @@
-// App ESSĒRE - Titolare Dashboard Screen
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Card, Avatar, Button } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
-import { Card, Button } from '../../components/common';
-import { COLORS, SPACING, FONT_SIZE, SHADOWS } from '../../constants/theme';
+import { COLORS, SPACING, TYPOGRAPHY } from '../../constants/theme';
 
 export const DashboardScreen: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
 
-  // Dati mock per demo
+  // Dati mock per la dashboard
   const stats = {
-    sessioni_oggi: 5,
-    allievi_totali: 24,
-    collaboratori: 3,
-    entrate_mese: 4850,
+    sessioniOggi: 8,
+    collaboratoriAttivi: 3,
+    allieviTotali: 25,
+    entrateDelMese: 4500,
+    usciteDelMese: 1200,
   };
 
-  const StatCard = ({
-    title,
-    value,
-    color
-  }: {
-    title: string;
-    value: string | number;
-    color: string;
-  }) => (
-    <View style={[styles.statCard, { borderLeftColor: color }]}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statTitle}>{title}</Text>
-    </View>
-  );
+  const prossimiAppuntamenti = [
+    { id: '1', allievo: 'Marco Bianchi', ora: '09:00', collaboratore: 'Luca' },
+    { id: '2', allievo: 'Anna Verdi', ora: '10:30', collaboratore: 'Sara' },
+    { id: '3', allievo: 'Paolo Neri', ora: '14:00', collaboratore: 'Tu' },
+  ];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container}>
+      {/* Header con saluto */}
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerLeft}>
           <Text style={styles.greeting}>Ciao, {user?.nome}!</Text>
-          <Text style={styles.role}>Titolare</Text>
-        </View>
-        <TouchableOpacity style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {user?.nome?.charAt(0)}{user?.cognome?.charAt(0)}
+          <Text style={styles.date}>
+            {new Date().toLocaleDateString('it-IT', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+            })}
           </Text>
+        </View>
+        <TouchableOpacity onPress={logout}>
+          <Avatar name={`${user?.nome} ${user?.cognome}`} backgroundColor={COLORS.titolare} />
         </TouchableOpacity>
       </View>
 
+      {/* Stats Grid */}
       <View style={styles.statsGrid}>
-        <StatCard
-          title="Sessioni oggi"
-          value={stats.sessioni_oggi}
-          color={COLORS.primary}
-        />
-        <StatCard
-          title="Allievi totali"
-          value={stats.allievi_totali}
-          color={COLORS.success}
-        />
-        <StatCard
-          title="Collaboratori"
-          value={stats.collaboratori}
-          color={COLORS.secondary}
-        />
-        <StatCard
-          title="Entrate mese"
-          value={`€${stats.entrate_mese}`}
-          color={COLORS.info}
-        />
+        <Card style={[styles.statCard, { backgroundColor: COLORS.titolare }]}>
+          <Text style={styles.statNumber}>{stats.sessioniOggi}</Text>
+          <Text style={styles.statLabel}>Sessioni Oggi</Text>
+        </Card>
+        <Card style={[styles.statCard, { backgroundColor: COLORS.collaboratore }]}>
+          <Text style={styles.statNumber}>{stats.collaboratoriAttivi}</Text>
+          <Text style={styles.statLabel}>Collaboratori</Text>
+        </Card>
+        <Card style={[styles.statCard, { backgroundColor: COLORS.allievo }]}>
+          <Text style={styles.statNumber}>{stats.allieviTotali}</Text>
+          <Text style={styles.statLabel}>Allievi Totali</Text>
+        </Card>
       </View>
 
-      <Card style={styles.section}>
-        <Text style={styles.sectionTitle}>Prossime Sessioni</Text>
-        <View style={styles.sessionItem}>
-          <View style={[styles.sessionDot, { backgroundColor: COLORS.calendar[0] }]} />
-          <View style={styles.sessionInfo}>
-            <Text style={styles.sessionTime}>09:00 - 10:00</Text>
-            <Text style={styles.sessionName}>Mario Rossi</Text>
-            <Text style={styles.sessionCoach}>con Marco Bianchi</Text>
+      {/* Riepilogo Economico */}
+      <Card title="Riepilogo Economico" style={styles.card}>
+        <View style={styles.economicRow}>
+          <View style={styles.economicItem}>
+            <Text style={styles.economicLabel}>Entrate</Text>
+            <Text style={[styles.economicValue, { color: COLORS.success }]}>
+              +{stats.entrateDelMese.toLocaleString()}
+            </Text>
           </View>
-        </View>
-        <View style={styles.sessionItem}>
-          <View style={[styles.sessionDot, { backgroundColor: COLORS.calendar[1] }]} />
-          <View style={styles.sessionInfo}>
-            <Text style={styles.sessionTime}>11:00 - 12:00</Text>
-            <Text style={styles.sessionName}>Giulia Verdi</Text>
-            <Text style={styles.sessionCoach}>con Anna Neri</Text>
+          <View style={styles.economicItem}>
+            <Text style={styles.economicLabel}>Uscite</Text>
+            <Text style={[styles.economicValue, { color: COLORS.error }]}>
+              -{stats.usciteDelMese.toLocaleString()}
+            </Text>
           </View>
-        </View>
-        <View style={styles.sessionItem}>
-          <View style={[styles.sessionDot, { backgroundColor: COLORS.calendar[0] }]} />
-          <View style={styles.sessionInfo}>
-            <Text style={styles.sessionTime}>14:30 - 15:30</Text>
-            <Text style={styles.sessionName}>Luca Gialli</Text>
-            <Text style={styles.sessionCoach}>con Marco Bianchi</Text>
+          <View style={styles.economicItem}>
+            <Text style={styles.economicLabel}>Profitto</Text>
+            <Text style={[styles.economicValue, { color: COLORS.primary }]}>
+              {(stats.entrateDelMese - stats.usciteDelMese).toLocaleString()}
+            </Text>
           </View>
         </View>
       </Card>
 
-      <Card style={styles.section}>
-        <Text style={styles.sectionTitle}>Pagamenti in Scadenza</Text>
-        <View style={styles.paymentItem}>
-          <View>
-            <Text style={styles.paymentName}>Mario Rossi</Text>
-            <Text style={styles.paymentDate}>Scade: 15 Feb 2026</Text>
+      {/* Prossimi Appuntamenti */}
+      <Card title="Prossimi Appuntamenti" style={styles.card}>
+        {prossimiAppuntamenti.map((app) => (
+          <View key={app.id} style={styles.appointmentRow}>
+            <View style={styles.appointmentTime}>
+              <Text style={styles.appointmentTimeText}>{app.ora}</Text>
+            </View>
+            <View style={styles.appointmentInfo}>
+              <Text style={styles.appointmentName}>{app.allievo}</Text>
+              <Text style={styles.appointmentCollab}>con {app.collaboratore}</Text>
+            </View>
           </View>
-          <Text style={styles.paymentAmount}>€150</Text>
-        </View>
-        <View style={styles.paymentItem}>
-          <View>
-            <Text style={styles.paymentName}>Giulia Verdi</Text>
-            <Text style={styles.paymentDate}>Scade: 18 Feb 2026</Text>
-          </View>
-          <Text style={styles.paymentAmount}>€200</Text>
-        </View>
+        ))}
       </Card>
 
-      <Button
-        title="Logout"
-        onPress={signOut}
-        variant="outline"
-        style={styles.logoutButton}
-      />
+      {/* Quick Actions */}
+      <View style={styles.quickActions}>
+        <Button title="+ Nuova Sessione" onPress={() => {}} variant="primary" />
+        <Button title="+ Nuovo Allievo" onPress={() => {}} variant="outline" />
+      </View>
+
+      <View style={styles.bottomPadding} />
     </ScrollView>
   );
 };
@@ -129,128 +112,95 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xxl,
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.lg,
-    paddingTop: SPACING.md,
+    padding: SPACING.lg,
   },
+  headerLeft: {},
   greeting: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: '700',
+    ...TYPOGRAPHY.h2,
     color: COLORS.textPrimary,
   },
-  role: {
-    fontSize: FONT_SIZE.md,
-    color: COLORS.primary,
-    fontWeight: '500',
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: COLORS.white,
-    fontSize: FONT_SIZE.lg,
-    fontWeight: '600',
+  date: {
+    ...TYPOGRAPHY.body,
+    color: COLORS.textSecondary,
+    textTransform: 'capitalize',
   },
   statsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    paddingHorizontal: SPACING.lg,
     gap: SPACING.sm,
-    marginBottom: SPACING.lg,
   },
   statCard: {
     flex: 1,
-    minWidth: '45%',
-    backgroundColor: COLORS.surface,
-    padding: SPACING.md,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    ...SHADOWS.sm,
-  },
-  statValue: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  statTitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    marginTop: 4,
-  },
-  section: {
-    marginBottom: SPACING.md,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.md,
-  },
-  sessionItem: {
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    padding: SPACING.md,
   },
-  sessionDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: SPACING.md,
+  statNumber: {
+    ...TYPOGRAPHY.h1,
+    color: COLORS.white,
   },
-  sessionInfo: {
-    flex: 1,
+  statLabel: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.white,
+    opacity: 0.9,
   },
-  sessionTime: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+  card: {
+    margin: SPACING.lg,
+    marginTop: SPACING.md,
   },
-  sessionName: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  sessionCoach: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-  },
-  paymentItem: {
+  economicRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  economicItem: {
+    alignItems: 'center',
+  },
+  economicLabel: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textSecondary,
+  },
+  economicValue: {
+    ...TYPOGRAPHY.h3,
+    marginTop: SPACING.xs,
+  },
+  appointmentRow: {
+    flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: SPACING.sm,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: COLORS.gray200,
   },
-  paymentName: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '500',
-    color: COLORS.textPrimary,
+  appointmentTime: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: 4,
+    marginRight: SPACING.md,
   },
-  paymentDate: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.warning,
+  appointmentTimeText: {
+    color: COLORS.white,
+    fontWeight: 'bold',
   },
-  paymentAmount: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+  appointmentInfo: {
+    flex: 1,
   },
-  logoutButton: {
-    marginTop: SPACING.lg,
+  appointmentName: {
+    ...TYPOGRAPHY.body,
+    fontWeight: '600',
+  },
+  appointmentCollab: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textSecondary,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    padding: SPACING.lg,
+    gap: SPACING.md,
+  },
+  bottomPadding: {
+    height: SPACING.xxl,
   },
 });
-
-export default DashboardScreen;

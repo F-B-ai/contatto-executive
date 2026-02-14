@@ -1,49 +1,34 @@
 {
   "expo": {
-    "name": "App ESSĒRE",
+    "name": "App ESSERE",
     "slug": "app-essere",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "scheme": "appessere",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1E3A5F"
+      "backgroundColor": "#1a1a2e"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.essere.app",
-      "infoPlist": {
-        "NSCameraUsageDescription": "L'app necessita dell'accesso alla fotocamera per i test posturali e le foto del diario.",
-        "NSPhotoLibraryUsageDescription": "L'app necessita dell'accesso alla libreria foto per caricare immagini."
-      }
+      "bundleIdentifier": "com.essere.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1E3A5F"
+        "backgroundColor": "#1a1a2e"
       },
-      "package": "com.essere.app",
-      "edgeToEdgeEnabled": true,
-      "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
-      ]
+      "package": "com.essere.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
-      "expo-image-picker"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "YOUR_EAS_PROJECT_ID"
-      }
-    }
+      "expo-router"
+    ]
   }
 }

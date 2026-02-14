@@ -1,25 +1,27 @@
-// App ESSĒRE - Login Screen
 import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
+  ScrollView,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../navigation/types';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Button, Input } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
-import { Button, Input, Card } from '../../components/common';
-import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from '../../constants/theme';
+import { AuthStackParamList } from '../../types';
+import { COLORS, SPACING, TYPOGRAPHY } from '../../constants/theme';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
+type LoginNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
-export const LoginScreen: React.FC<Props> = ({ navigation }) => {
-  const { signIn, isLoading } = useAuth();
+export const LoginScreen: React.FC = () => {
+  const navigation = useNavigation<LoginNavigationProp>();
+  const { login, isLoading } = useAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
@@ -27,16 +29,16 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const validate = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
 
-    if (!email.trim()) {
-      newErrors.email = 'Email richiesta';
+    if (!email) {
+      newErrors.email = 'Email obbligatoria';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Email non valida';
     }
 
     if (!password) {
-      newErrors.password = 'Password richiesta';
+      newErrors.password = 'Password obbligatoria';
     } else if (password.length < 6) {
-      newErrors.password = 'Password minimo 6 caratteri';
+      newErrors.password = 'Password troppo corta (min 6 caratteri)';
     }
 
     setErrors(newErrors);
@@ -47,9 +49,9 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     if (!validate()) return;
 
     try {
-      await signIn(email.trim().toLowerCase(), password);
-    } catch (error: any) {
-      Alert.alert('Errore', error.message);
+      await login(email, password);
+    } catch (error) {
+      Alert.alert('Errore', 'Credenziali non valide');
     }
   };
 
@@ -62,22 +64,23 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.logo}>ESSĒRE</Text>
-          <Text style={styles.subtitle}>Gestione Coaching Professionale</Text>
+          <Text style={styles.logo}>ESSERE</Text>
+          <Text style={styles.subtitle}>Gestione Studio Personal Training</Text>
         </View>
 
-        <Card style={styles.card}>
+        {/* Form */}
+        <View style={styles.form}>
           <Text style={styles.title}>Accedi</Text>
 
           <Input
             label="Email"
             value={email}
             onChangeText={setEmail}
-            placeholder="La tua email"
+            placeholder="tuaemail@esempio.com"
             keyboardType="email-address"
             autoCapitalize="none"
-            autoCorrect={false}
             error={errors.email}
           />
 
@@ -86,7 +89,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             value={password}
             onChangeText={setPassword}
             placeholder="La tua password"
-            isPassword
+            secureTextEntry
             error={errors.password}
           />
 
@@ -102,15 +105,20 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             onPress={handleLogin}
             loading={isLoading}
             fullWidth
-            style={styles.button}
           />
-        </Card>
+        </View>
 
+        {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>Non hai un account?</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Register')}>
             <Text style={styles.registerLink}>Registrati</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Demo hint */}
+        <View style={styles.demoHint}>
+          <Text style={styles.demoText}>Demo: usa email con 'titolare', 'collaboratore' o 'allievo'</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -124,30 +132,32 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
     padding: SPACING.lg,
+    justifyContent: 'center',
   },
   header: {
     alignItems: 'center',
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.xxl,
   },
   logo: {
-    fontSize: 42,
-    fontWeight: '700',
+    fontSize: 48,
+    fontWeight: 'bold',
     color: COLORS.primary,
-    letterSpacing: 4,
+    letterSpacing: 8,
   },
   subtitle: {
-    fontSize: FONT_SIZE.md,
+    ...TYPOGRAPHY.body,
     color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
+    marginTop: SPACING.sm,
   },
-  card: {
+  form: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
     padding: SPACING.lg,
+    marginBottom: SPACING.lg,
   },
   title: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: '700',
+    ...TYPOGRAPHY.h2,
     color: COLORS.textPrimary,
     marginBottom: SPACING.lg,
     textAlign: 'center',
@@ -157,27 +167,33 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   forgotPasswordText: {
-    color: COLORS.primary,
-    fontSize: FONT_SIZE.sm,
-  },
-  button: {
-    marginTop: SPACING.sm,
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.accent,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: SPACING.xl,
+    alignItems: 'center',
     gap: SPACING.xs,
   },
   footerText: {
+    ...TYPOGRAPHY.body,
     color: COLORS.textSecondary,
-    fontSize: FONT_SIZE.md,
   },
   registerLink: {
-    color: COLORS.primary,
-    fontSize: FONT_SIZE.md,
-    fontWeight: '600',
+    ...TYPOGRAPHY.body,
+    color: COLORS.accent,
+    fontWeight: 'bold',
+  },
+  demoHint: {
+    marginTop: SPACING.xl,
+    padding: SPACING.md,
+    backgroundColor: COLORS.gray100,
+    borderRadius: 8,
+  },
+  demoText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
 });
-
-export default LoginScreen;

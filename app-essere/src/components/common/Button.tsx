@@ -1,4 +1,3 @@
-// App ESSĒRE - Button Component
 import React from 'react';
 import {
   TouchableOpacity,
@@ -8,126 +7,154 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
+import { COLORS, SPACING, BORDERS, SIZES, TYPOGRAPHY } from '../../constants/theme';
+
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+type ButtonSize = 'small' | 'medium' | 'large';
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   disabled?: boolean;
   loading?: boolean;
-  icon?: React.ReactNode;
-  iconPosition?: 'left' | 'right';
   fullWidth?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  icon?: React.ReactNode;
 }
 
 export const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
   variant = 'primary',
-  size = 'md',
+  size = 'medium',
   disabled = false,
   loading = false,
-  icon,
-  iconPosition = 'left',
   fullWidth = false,
   style,
   textStyle,
+  icon,
 }) => {
-  const isDisabled = disabled || loading;
+  const buttonStyles = [
+    styles.base,
+    styles[variant],
+    styles[`size_${size}`],
+    fullWidth && styles.fullWidth,
+    disabled && styles.disabled,
+    style,
+  ];
 
-  const getButtonStyle = (): ViewStyle => {
-    const baseStyle: ViewStyle = {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: BORDER_RADIUS.md,
-      ...SHADOWS.sm,
-    };
-
-    // Size styles
-    const sizeStyles: Record<string, ViewStyle> = {
-      sm: { paddingVertical: SPACING.xs, paddingHorizontal: SPACING.md },
-      md: { paddingVertical: SPACING.sm + 4, paddingHorizontal: SPACING.lg },
-      lg: { paddingVertical: SPACING.md, paddingHorizontal: SPACING.xl },
-    };
-
-    // Variant styles
-    const variantStyles: Record<string, ViewStyle> = {
-      primary: { backgroundColor: COLORS.primary },
-      secondary: { backgroundColor: COLORS.secondary },
-      outline: {
-        backgroundColor: 'transparent',
-        borderWidth: 2,
-        borderColor: COLORS.primary,
-        ...{ shadowOpacity: 0, elevation: 0 },
-      },
-      ghost: {
-        backgroundColor: 'transparent',
-        ...{ shadowOpacity: 0, elevation: 0 },
-      },
-    };
-
-    return {
-      ...baseStyle,
-      ...sizeStyles[size],
-      ...variantStyles[variant],
-      ...(fullWidth && { width: '100%' }),
-      ...(isDisabled && { opacity: 0.5 }),
-    };
-  };
-
-  const getTextStyle = (): TextStyle => {
-    const sizeStyles: Record<string, TextStyle> = {
-      sm: { fontSize: FONT_SIZE.sm },
-      md: { fontSize: FONT_SIZE.md },
-      lg: { fontSize: FONT_SIZE.lg },
-    };
-
-    const variantStyles: Record<string, TextStyle> = {
-      primary: { color: COLORS.textOnPrimary },
-      secondary: { color: COLORS.textOnSecondary },
-      outline: { color: COLORS.primary },
-      ghost: { color: COLORS.primary },
-    };
-
-    return {
-      fontWeight: '600',
-      ...sizeStyles[size],
-      ...variantStyles[variant],
-    };
-  };
+  const textStyles = [
+    styles.text,
+    styles[`text_${variant}`],
+    styles[`textSize_${size}`],
+    disabled && styles.textDisabled,
+    textStyle,
+  ];
 
   return (
     <TouchableOpacity
-      style={[getButtonStyle(), style]}
+      style={buttonStyles}
       onPress={onPress}
-      disabled={isDisabled}
+      disabled={disabled || loading}
       activeOpacity={0.7}
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'primary' ? COLORS.white : COLORS.primary}
+          color={variant === 'outline' || variant === 'ghost' ? COLORS.primary : COLORS.white}
           size="small"
         />
       ) : (
         <>
-          {icon && iconPosition === 'left' && (
-            <>{icon}</>
-          )}
-          <Text style={[getTextStyle(), icon ? { marginHorizontal: SPACING.xs } : undefined, textStyle]}>
-            {title}
-          </Text>
-          {icon && iconPosition === 'right' && (
-            <>{icon}</>
-          )}
+          {icon}
+          <Text style={textStyles}>{title}</Text>
         </>
       )}
     </TouchableOpacity>
   );
 };
 
-export default Button;
+const styles = StyleSheet.create({
+  base: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: BORDERS.radiusMedium,
+    gap: SPACING.sm,
+  },
+  fullWidth: {
+    width: '100%',
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+
+  // Variants
+  primary: {
+    backgroundColor: COLORS.primary,
+  },
+  secondary: {
+    backgroundColor: COLORS.accent,
+  },
+  outline: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  },
+  ghost: {
+    backgroundColor: 'transparent',
+  },
+  danger: {
+    backgroundColor: COLORS.error,
+  },
+
+  // Sizes
+  size_small: {
+    height: 36,
+    paddingHorizontal: SPACING.md,
+  },
+  size_medium: {
+    height: SIZES.buttonHeight,
+    paddingHorizontal: SPACING.lg,
+  },
+  size_large: {
+    height: 56,
+    paddingHorizontal: SPACING.xl,
+  },
+
+  // Text
+  text: {
+    ...TYPOGRAPHY.button,
+  },
+  text_primary: {
+    color: COLORS.white,
+  },
+  text_secondary: {
+    color: COLORS.white,
+  },
+  text_outline: {
+    color: COLORS.primary,
+  },
+  text_ghost: {
+    color: COLORS.primary,
+  },
+  text_danger: {
+    color: COLORS.white,
+  },
+  textDisabled: {
+    color: COLORS.gray500,
+  },
+
+  // Text Sizes
+  textSize_small: {
+    fontSize: 14,
+  },
+  textSize_medium: {
+    fontSize: 16,
+  },
+  textSize_large: {
+    fontSize: 18,
+  },
+});
