@@ -1,0 +1,182 @@
+'use strict';
+
+require('dotenv').config();
+
+const fs = require('fs');
+const path = require('path');
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
+
+const { generateReply, describeApiError, MODEL } = require('./claude');
+const history = require('./history');
+
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.error('ERRORE: manca ANTHROPIC_API_KEY. Copia .env.example in .env e inserisci la tua chiave.');
+  process.exit(1);
+}
+
+const SYSTEM_PROMPT = fs.readFileSync(
+  path.join(__dirname, '..', 'config', 'system-prompt.md'),
+  'utf8'
+);
+
+const DEBOUNCE_MS = parseInt(process.env.DEBOUNCE_SECONDS || '5', 10) * 1000;
+const TAKEOVER_MS = parseInt(process.env.TAKEOVER_MINUTES || '60', 10) * 60 * 1000;
+const FALLBACK_REPLY =
+  'Scusami, in questo momento ho un problema tecnico 🙏 Riprova tra qualche minuto, oppure Francesco ti risponderà personalmente appena possibile.';
+
+// Stato in memoria
+const pausedUntil = new Map(); // chatId -> timestamp (Infinity = pausa manuale)
+const pending = new Map(); // chatId -> { timer, texts: [] }
+const botSentIds = new Set(); // id dei messaggi inviati dal bot (per non auto-pausarsi)
+
+const client = new Client({
+  authStrategy: new LocalAuth({ dataPath: path.join(__dirname, '..', '.wwebjs_auth') }),
+  puppeteer: {
+    headless: true,
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  },
+});
+
+client.on('qr', (qr) => {
+  console.log('\nScansiona questo QR code con WhatsApp (Impostazioni → Dispositivi collegati):\n');
+  qrcode.generate(qr, { small: true });
+});
+
+client.on('authenticated', () => console.log('[bot] Autenticato: sessione salvata in .wwebjs_auth/'));
+client.on('auth_failure', (msg) => console.error('[bot] Autenticazione fallita:', msg));
+client.on('disconnected', (reason) => console.error('[bot] Disconnesso:', reason));
+
+client.on('ready', () => {
+  console.log(`[bot] Pronto! Rispondo con il modello ${MODEL}.`);
+  console.log('[bot] Comandi (da inviare TU nella chat): !bot off, !bot on, !reset');
+});
+
+function isPaused(chatId) {
+  const until = pausedUntil.get(chatId);
+  if (!until) return false;
+  if (Date.now() >= until) {
+    pausedUntil.delete(chatId);
+    return false;
+  }
+  return true;
+}
+
+// Messaggi in arrivo dai contatti
+client.on('message', async (msg) => {
+  try {
+    if (msg.from === 'status@broadcast') return;
+
+    const chat = await msg.getChat();
+    if (chat.isGroup) return;
+
+    const chatId = chat.id._serialized;
+    if (isPaused(chatId)) return;
+
+    const body =
+      (msg.body || '').trim() ||
+      `[Il contatto ha inviato un contenuto di tipo "${msg.type}" che non puoi leggere]`;
+
+    // Raccoglie i messaggi ravvicinati e risponde una volta sola (debounce)
+    let entry = pending.get(chatId);
+    if (!entry) {
+      entry = { timer: null, texts: [] };
+      pending.set(chatId, entry);
+    }
+    entry.texts.push(body);
+    if (entry.timer) clearTimeout(entry.timer);
+    entry.timer = setTimeout(() => respond(chat, chatId), DEBOUNCE_MS);
+  } catch (err) {
+    console.error('[bot] Errore nella gestione del messaggio:', err);
+  }
+});
+
+async function respond(chat, chatId) {
+  const entry = pending.get(chatId);
+  pending.delete(chatId);
+  if (!entry || entry.texts.length === 0) return;
+  if (isPaused(chatId)) return;
+
+  const userText = entry.texts.join('\n');
+  history.append(chatId, 'user', userText);
+
+  try {
+    await chat.sendStateTyping();
+  } catch {
+    // l'indicatore "sta scrivendo" è solo cosmetico
+  }
+
+  let reply;
+  try {
+    reply = await generateReply(history.get(chatId), SYSTEM_PROMPT);
+  } catch (err) {
+    console.error('[bot]', describeApiError(err));
+    reply = FALLBACK_REPLY;
+  }
+
+  if (!reply) return;
+
+  history.append(chatId, 'assistant', reply);
+
+  try {
+    const sent = await chat.sendMessage(reply);
+    botSentIds.add(sent.id._serialized);
+    console.log(`[bot] Risposto a ${chatId}`);
+  } catch (err) {
+    console.error('[bot] Invio messaggio fallito:', err.message);
+  }
+}
+
+// Messaggi inviati DA TE (comandi e presa in carico manuale)
+client.on('message_create', (msg) => {
+  if (!msg.fromMe) return;
+  // Attende un attimo perché l'id del messaggio del bot venga registrato
+  setTimeout(() => {
+    handleOwnerMessage(msg).catch((err) =>
+      console.error('[bot] Errore nella gestione del messaggio proprio:', err)
+    );
+  }, 1500);
+});
+
+async function handleOwnerMessage(msg) {
+  const id = msg.id._serialized;
+  if (botSentIds.has(id)) {
+    botSentIds.delete(id);
+    return; // messaggio inviato dal bot stesso
+  }
+
+  const chatId = msg.to;
+  if (!chatId || chatId === 'status@broadcast' || chatId.endsWith('@g.us')) return;
+
+  const body = (msg.body || '').trim().toLowerCase();
+
+  if (body === '!bot off') {
+    pausedUntil.set(chatId, Infinity);
+    console.log(`[bot] Disattivato manualmente in ${chatId}`);
+    return;
+  }
+  if (body === '!bot on') {
+    pausedUntil.delete(chatId);
+    console.log(`[bot] Riattivato in ${chatId}`);
+    return;
+  }
+  if (body === '!reset') {
+    history.clear(chatId);
+    pausedUntil.delete(chatId);
+    console.log(`[bot] Conversazione azzerata per ${chatId}`);
+    return;
+  }
+
+  // Hai risposto tu di persona: il bot si mette in pausa in questa chat
+  pausedUntil.set(chatId, Date.now() + TAKEOVER_MS);
+  console.log(
+    `[bot] Presa in carico manuale rilevata in ${chatId}: bot in pausa per ${TAKEOVER_MS / 60000} minuti`
+  );
+}
+
+client.initialize().catch((err) => {
+  console.error('[bot] Avvio fallito:', err.message);
+  console.error('[bot] Controlla la connessione a internet e riprova con: npm start');
+  process.exit(1);
+});
