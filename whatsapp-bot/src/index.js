@@ -39,7 +39,34 @@ const client = new Client({
   },
 });
 
-client.on('qr', (qr) => {
+// Se PAIRING_PHONE_NUMBER è impostato, il collegamento avviene con un codice
+// da digitare su WhatsApp invece del QR code (comodo da iPhone / server remoto).
+const PAIRING_NUMBER = (process.env.PAIRING_PHONE_NUMBER || '').replace(/\D/g, '');
+let pairingCodeRequested = false;
+
+client.on('qr', async (qr) => {
+  if (PAIRING_NUMBER) {
+    if (pairingCodeRequested) return;
+    pairingCodeRequested = true;
+    try {
+      const code = await client.requestPairingCode(PAIRING_NUMBER);
+      const pretty = code.length === 8 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
+      console.log('\n================================================');
+      console.log(`  Codice di abbinamento WhatsApp: ${pretty}`);
+      console.log('================================================');
+      console.log('Su WhatsApp: Impostazioni → Dispositivi collegati →');
+      console.log('Collega un dispositivo → "Collega con numero di telefono"');
+      console.log('e digita il codice qui sopra.\n');
+    } catch (err) {
+      console.error('[bot] Richiesta del codice di abbinamento fallita:', err.message);
+      console.error(
+        '[bot] Controlla PAIRING_PHONE_NUMBER nel file .env: solo cifre, con prefisso internazionale (es. 393331234567).'
+      );
+      pairingCodeRequested = false; // riprova al prossimo evento QR
+    }
+    return;
+  }
+
   console.log('\nScansiona questo QR code con WhatsApp (Impostazioni → Dispositivi collegati):\n');
   qrcode.generate(qr, { small: true });
 });

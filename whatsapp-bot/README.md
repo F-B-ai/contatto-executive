@@ -44,6 +44,16 @@ Al primo avvio compare un **QR code nel terminale**: scansionalo dal telefono co
 
 Il bot deve restare in esecuzione per rispondere: su un server puoi usare [pm2](https://pm2.keymetrics.io/) (`pm2 start src/index.js --name whatsapp-bot`).
 
+### Collegamento senza QR (da iPhone o server remoto)
+
+Se gestisci il server dallo stesso telefono che ha WhatsApp (es. via SSH dall'iPhone con un'app come Termius), non puoi scansionare il QR che appare sullo schermo del telefono stesso. In quel caso usa il **codice di abbinamento**:
+
+1. Nel file `.env` imposta `PAIRING_PHONE_NUMBER` con il numero WhatsApp del bot, solo cifre e con prefisso internazionale (es. `393331234567`).
+2. Avvia il bot: nel terminale compare un **codice di 8 caratteri** invece del QR.
+3. Su WhatsApp: **Impostazioni → Dispositivi collegati → Collega un dispositivo → "Collega con numero di telefono"** e digita il codice.
+
+Una volta collegato, la sessione resta salvata e ai riavvii non serve ripetere la procedura. Ricorda: il bot gira sul computer/server, non sull'iPhone — il telefono serve solo per autorizzare il collegamento e, volendo, per controllare il server via SSH.
+
 ## Personalizzazione
 
 - **Personalità e regole del bot**: modifica `config/system-prompt.md` (è testo semplice, riavvia il bot dopo le modifiche).
