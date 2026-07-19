@@ -10,7 +10,8 @@ Bot che risponde automaticamente ai messaggi WhatsApp usando l'AI di Claude (Ant
 - Ricorda la conversazione con ogni contatto (storico salvato in `data/conversations.json`).
 - Raggruppa i messaggi ravvicinati di un contatto e risponde una volta sola.
 - **Si mette in pausa da solo** in una chat quando rispondi tu manualmente (default: 60 minuti), così non ti parla sopra.
-- Mostra l'indicatore "sta scrivendo…" prima di rispondere.
+- Mostra l'indicatore "sta scrivendo…" (o "sta registrando…") prima di rispondere.
+- **Risposte vocali** (opzionale): capisce i vocali dei contatti (trascrizione automatica) e risponde con veri messaggi vocali usando una voce femminile naturale in italiano — la tua "segretaria virtuale".
 
 ## Comandi (li invii tu, dal tuo telefono, dentro la chat)
 
@@ -53,6 +54,22 @@ Se gestisci il server dallo stesso telefono che ha WhatsApp (es. via SSH dall'iP
 3. Su WhatsApp: **Impostazioni → Dispositivi collegati → Collega un dispositivo → "Collega con numero di telefono"** e digita il codice.
 
 Una volta collegato, la sessione resta salvata e ai riavvii non serve ripetere la procedura. Ricorda: il bot gira sul computer/server, non sull'iPhone — il telefono serve solo per autorizzare il collegamento e, volendo, per controllare il server via SSH.
+
+## Risposte vocali (la "segretaria virtuale")
+
+Con un account [ElevenLabs](https://elevenlabs.io) il bot parla e ascolta:
+
+- **Ascolta**: i vocali dei contatti vengono trascritti automaticamente, così l'AI capisce cosa hanno detto e risponde nel merito.
+- **Parla**: le risposte vengono inviate come veri messaggi vocali WhatsApp (con la forma d'onda), sintetizzati con la voce che scegli.
+
+Per attivarle:
+
+1. Crea un account su [elevenlabs.io](https://elevenlabs.io) (c'è un piano gratuito, ~10 minuti di voce al mese, per provare; i piani a pagamento partono da ~5$/mese).
+2. Copia la chiave API in `.env` → `ELEVENLABS_API_KEY`.
+3. (Facoltativo) Scegli la voce della segretaria dalla [Voice Library](https://elevenlabs.io/app/voice-library): apri una voce, copia il suo **Voice ID** e incollalo in `ELEVENLABS_VOICE_ID`. Il default è "Sarah", una voce femminile che parla bene l'italiano. Con i piani a pagamento puoi anche **clonare una voce specifica**.
+4. Scegli quando parlare con `VOICE_REPLIES`: `auto` (a voce solo quando il contatto manda vocali — consigliato), `always` (sempre a voce) o `off`.
+
+Se la sintesi vocale fallisce per qualsiasi motivo (credito esaurito, rete), il bot ripiega automaticamente sulla risposta scritta: non resta mai in silenzio.
 
 ## Personalizzazione
 

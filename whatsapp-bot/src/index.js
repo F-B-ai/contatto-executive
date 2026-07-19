@@ -4,11 +4,12 @@ require('dotenv').config();
 
 const fs = require('fs');
 const path = require('path');
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 
 const { generateReply, describeApiError, MODEL } = require('./claude');
 const history = require('./history');
+const voice = require('./voice');
 
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error('ERRORE: manca ANTHROPIC_API_KEY. Copia .env.example in .env e inserisci la tua chiave.');
@@ -21,6 +22,9 @@ const SYSTEM_PROMPT = fs.readFileSync(
 );
 
 const DEBOUNCE_MS = parseInt(process.env.DEBOUNCE_SECONDS || '5', 10) * 1000;
+// Risposte vocali: 'auto' = a voce solo se il contatto manda vocali,
+// 'always' = sempre a voce, 'off' = solo testo
+const VOICE_REPLIES = (process.env.VOICE_REPLIES || 'auto').toLowerCase();
 const TAKEOVER_MS = parseInt(process.env.TAKEOVER_MINUTES || '60', 10) * 60 * 1000;
 const FALLBACK_REPLY =
   'Scusami, in questo momento ho un problema tecnico 🙏 Riprova tra qualche minuto, oppure Francesco ti risponderà personalmente appena possibile.';
@@ -101,16 +105,32 @@ client.on('message', async (msg) => {
     const chatId = chat.id._serialized;
     if (isPaused(chatId)) return;
 
-    const body =
-      (msg.body || '').trim() ||
-      `[Il contatto ha inviato un contenuto di tipo "${msg.type}" che non puoi leggere]`;
+    const isVoiceMsg = msg.type === 'ptt' || msg.type === 'audio';
+    let body = (msg.body || '').trim();
+
+    if (isVoiceMsg && voice.isConfigured()) {
+      try {
+        const media = await msg.downloadMedia();
+        const transcript = await voice.transcribeVoice(media.data, media.mimetype);
+        body = transcript
+          ? `[Messaggio vocale del contatto, trascrizione automatica] ${transcript}`
+          : '[Il contatto ha inviato un vocale, ma la trascrizione è risultata vuota]';
+      } catch (err) {
+        console.error('[bot] Trascrizione del vocale fallita:', err.message);
+        body = '[Il contatto ha inviato un vocale che non è stato possibile trascrivere]';
+      }
+    }
+    if (!body) {
+      body = `[Il contatto ha inviato un contenuto di tipo "${msg.type}" che non puoi leggere]`;
+    }
 
     // Raccoglie i messaggi ravvicinati e risponde una volta sola (debounce)
     let entry = pending.get(chatId);
     if (!entry) {
-      entry = { timer: null, texts: [] };
+      entry = { timer: null, texts: [], wantsVoice: false };
       pending.set(chatId, entry);
     }
+    entry.wantsVoice = entry.wantsVoice || isVoiceMsg;
     entry.texts.push(body);
     if (entry.timer) clearTimeout(entry.timer);
     entry.timer = setTimeout(() => respond(chat, chatId), DEBOUNCE_MS);
@@ -128,11 +148,15 @@ async function respond(chat, chatId) {
   const userText = entry.texts.join('\n');
   history.append(chatId, 'user', userText);
 
+  const replyWithVoice =
+    voice.isConfigured() &&
+    (VOICE_REPLIES === 'always' || (VOICE_REPLIES === 'auto' && entry.wantsVoice));
+
   try {
-    await chat.sendStateTyping();
-  } catch {
-    // l'indicatore "sta scrivendo" è solo cosmetico
-  }
+    // indicatore "sta registrando…" / "sta scrivendo…" (solo cosmetico)
+    if (replyWithVoice) await chat.sendStateRecording();
+    else await chat.sendStateTyping();
+  } catch {}
 
   let reply;
   try {
@@ -147,9 +171,21 @@ async function respond(chat, chatId) {
   history.append(chatId, 'assistant', reply);
 
   try {
-    const sent = await chat.sendMessage(reply);
+    let sent = null;
+    if (replyWithVoice) {
+      try {
+        const audio = await voice.textToVoice(reply);
+        const media = new MessageMedia(audio.mimetype, audio.base64);
+        sent = await chat.sendMessage(media, { sendAudioAsVoice: true });
+      } catch (err) {
+        console.error('[bot] Sintesi vocale fallita, invio la risposta come testo:', err.message);
+      }
+    }
+    if (!sent) {
+      sent = await chat.sendMessage(reply);
+    }
     botSentIds.add(sent.id._serialized);
-    console.log(`[bot] Risposto a ${chatId}`);
+    console.log(`[bot] Risposto a ${chatId}${sent.hasMedia ? ' (vocale)' : ''}`);
   } catch (err) {
     console.error('[bot] Invio messaggio fallito:', err.message);
   }
