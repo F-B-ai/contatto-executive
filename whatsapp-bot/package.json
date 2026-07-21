@@ -1,0 +1,19 @@
+{
+  "name": "essere-whatsapp-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bot WhatsApp con risposte AI (Claude) per ESSĒRE / Francesco Busanca",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.111.0",
+    "dotenv": "^17.4.2",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.34.7"
+  }
+}
