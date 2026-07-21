@@ -36,19 +36,13 @@ const botSentIds = new Set(); // id dei messaggi inviati dal bot (per non auto-p
 
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: path.join(__dirname, '..', '.wwebjs_auth') }),
-  // Bug noto della libreria (issue #201838, 15/07/2026): la versione live
-  // attuale di WhatsApp Web rompe le funzioni interne (getChatById va in
-  // errore "r: r" su ogni messaggio ricevuto). Finché non viene rilasciata
-  // una correzione, forziamo una versione precedente al problema, presa
-  // dall'archivio pubblico wa-version. Se anche questa smette di funzionare,
-  // il problema è ancora aperto a monte: va solo aggiornato il numero qui
-  // sotto (o rimosso questo blocco) quando la libreria pubblica un fix.
-  webVersion: '2.3000.1041220451-alpha',
-  webVersionCache: {
-    type: 'remote',
-    remotePath:
-      'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/{version}.html',
-  },
+  // NB: niente override di webVersionCache. Un tentativo di forzare una
+  // versione precedente (per aggirare il bug upstream di getChatById, issue
+  // #201838) è stato scartato: l'intercettazione della richiesta della
+  // pagina che quel meccanismo richiede si è rivelata instabile su Windows
+  // e causava di nuovo "Execution context was destroyed" già all'avvio.
+  // Questa è la configurazione più stabile trovata finché la libreria non
+  // pubblica una correzione ufficiale.
   puppeteer: {
     // PUPPETEER_HEADLESS=false in .env apre la finestra di Chromium invece di
     // tenerla nascosta: utile per capire a video perché l'avvio si blocca.
