@@ -55,6 +55,82 @@ Se gestisci il server dallo stesso telefono che ha WhatsApp (es. via SSH dall'iP
 
 Una volta collegato, la sessione resta salvata e ai riavvii non serve ripetere la procedura. Ricorda: il bot gira sul computer/server, non sull'iPhone — il telefono serve solo per autorizzare il collegamento e, volendo, per controllare il server via SSH.
 
+## Distribuzione 24/7 su un server
+
+Per non dover tenere il tuo computer sempre acceso, il bot può girare su un piccolo server sempre attivo (VPS). Costa qualche euro al mese (es. [Hetzner Cloud](https://www.hetzner.com/cloud/), pianoCX22 economico) e resta collegato a WhatsApp senza interruzioni.
+
+**1. Crea il server**
+
+Su [hetzner.com](https://www.hetzner.com/cloud/) (o DigitalOcean, o un altro provider) crea un account e un nuovo server: sistema operativo **Ubuntu 24.04**, posizione europea, imposta una password per l'utente `root`. Al termine annota l'**indirizzo IP** del server.
+
+**2. Collegati al server** (da PowerShell sul tuo PC)
+
+```bash
+ssh root@TUO_INDIRIZZO_IP
+```
+
+Inserisci la password quando richiesto (non vedrai nulla mentre digiti, è normale).
+
+**3. Installa Node.js e git sul server**
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs git
+```
+
+**4. Scarica il codice**
+
+```bash
+git clone https://github.com/F-B-ai/contatto-executive.git
+cd contatto-executive/whatsapp-bot
+```
+
+**5. Installa le dipendenze e configura**
+
+```bash
+npm install
+cp .env.example .env
+nano .env
+```
+
+Inserisci `ANTHROPIC_API_KEY`, poi salva con `Ctrl+O`, Invio, ed esci con `Ctrl+X`.
+
+**6. Primo avvio, per collegare WhatsApp**
+
+```bash
+npm start
+```
+
+Il QR code compare direttamente nel terminale SSH: scansionalo come al solito. Una volta visto `[bot] Pronto!`, ferma con `Ctrl+C` (su Linux non serve `PUPPETEER_HEADLESS` né i flag extra per Windows: il browser headless funziona normalmente).
+
+**7. Avvialo in background, permanente**
+
+```bash
+npm install -g pm2
+pm2 start src/index.js --name whatsapp-bot
+pm2 save
+pm2 startup
+```
+
+L'ultimo comando stampa una riga da copiare e incollare: serve a far ripartire automaticamente il bot se il server si riavvia.
+
+**Comandi utili una volta installato:**
+
+| Comando | Effetto |
+|---|---|
+| `pm2 logs whatsapp-bot` | Vedi i log in diretta |
+| `pm2 restart whatsapp-bot` | Riavvia il bot |
+| `pm2 stop whatsapp-bot` | Ferma il bot |
+
+**Per aggiornare il codice in futuro:**
+
+```bash
+cd ~/contatto-executive/whatsapp-bot
+git pull
+npm install
+pm2 restart whatsapp-bot
+```
+
 ## Risposte vocali (la "segretaria virtuale")
 
 Con un account [ElevenLabs](https://elevenlabs.io) il bot parla e ascolta:
