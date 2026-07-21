@@ -36,9 +36,19 @@ const botSentIds = new Set(); // id dei messaggi inviati dal bot (per non auto-p
 
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: path.join(__dirname, '..', '.wwebjs_auth') }),
-  // NB: niente override di webVersionCache. La versione "live" più recente di
-  // WhatsApp Web rompe le funzioni interne della libreria (es. getChatById);
-  // la cache locale predefinita di whatsapp-web.js è quella testata e compatibile.
+  // Bug noto della libreria (issue #201838, 15/07/2026): la versione live
+  // attuale di WhatsApp Web rompe le funzioni interne (getChatById va in
+  // errore "r: r" su ogni messaggio ricevuto). Finché non viene rilasciata
+  // una correzione, forziamo una versione precedente al problema, presa
+  // dall'archivio pubblico wa-version. Se anche questa smette di funzionare,
+  // il problema è ancora aperto a monte: va solo aggiornato il numero qui
+  // sotto (o rimosso questo blocco) quando la libreria pubblica un fix.
+  webVersion: '2.3000.1041220451-alpha',
+  webVersionCache: {
+    type: 'remote',
+    remotePath:
+      'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/{version}.html',
+  },
   puppeteer: {
     // PUPPETEER_HEADLESS=false in .env apre la finestra di Chromium invece di
     // tenerla nascosta: utile per capire a video perché l'avvio si blocca.
