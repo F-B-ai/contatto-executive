@@ -36,6 +36,10 @@ const botSentIds = new Set(); // id dei messaggi inviati dal bot (per non auto-p
 
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: path.join(__dirname, '..', '.wwebjs_auth') }),
+  // Evita di usare una versione di WhatsApp Web cachata/disallineata: è la causa più
+  // comune di "Execution context was destroyed" all'avvio (la pagina viene ricaricata
+  // a metà iniezione). Con 'none' la libreria carica sempre la versione live.
+  webVersionCache: { type: 'none' },
   puppeteer: {
     headless: true,
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
