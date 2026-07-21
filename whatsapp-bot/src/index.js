@@ -36,10 +36,34 @@ const botSentIds = new Set(); // id dei messaggi inviati dal bot (per non auto-p
 
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: path.join(__dirname, '..', '.wwebjs_auth') }),
+  // Bug noto della libreria (issue #201838, 15/07/2026): la versione live
+  // attuale di WhatsApp Web rompe le funzioni interne (getChatById va in
+  // errore "r: r" su ogni messaggio ricevuto). Finché non viene rilasciata
+  // una correzione, forziamo una versione precedente al problema, presa
+  // dall'archivio pubblico wa-version. Se anche questa smette di funzionare,
+  // il problema è ancora aperto a monte: va solo aggiornato il numero qui
+  // sotto (o rimosso questo blocco) quando la libreria pubblica un fix.
+  webVersion: '2.3000.1041220451-alpha',
+  webVersionCache: {
+    type: 'remote',
+    remotePath:
+      'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/{version}.html',
+  },
   puppeteer: {
-    headless: true,
+    // PUPPETEER_HEADLESS=false in .env apre la finestra di Chromium invece di
+    // tenerla nascosta: utile per capire a video perché l'avvio si blocca.
+    headless: process.env.PUPPETEER_HEADLESS !== 'false',
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    // Flag extra oltre a --no-sandbox: risolvono crash di Chromium tipici su
+    // Windows (GPU/driver problematici) che si manifestano come "Execution
+    // context was destroyed" subito dopo l'avvio.
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--disable-accelerated-2d-canvas',
+    ],
   },
 });
 
