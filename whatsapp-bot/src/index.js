@@ -41,9 +41,20 @@ const client = new Client({
   // a metà iniezione). Con 'none' la libreria carica sempre la versione live.
   webVersionCache: { type: 'none' },
   puppeteer: {
-    headless: true,
+    // PUPPETEER_HEADLESS=false in .env apre la finestra di Chromium invece di
+    // tenerla nascosta: utile per capire a video perché l'avvio si blocca.
+    headless: process.env.PUPPETEER_HEADLESS !== 'false',
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    // Flag extra oltre a --no-sandbox: risolvono crash di Chromium tipici su
+    // Windows (GPU/driver problematici) che si manifestano come "Execution
+    // context was destroyed" subito dopo l'avvio.
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--disable-accelerated-2d-canvas',
+    ],
   },
 });
 
