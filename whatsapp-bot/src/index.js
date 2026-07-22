@@ -10,6 +10,7 @@ const qrcode = require('qrcode-terminal');
 const { generateReply, describeApiError, MODEL } = require('./claude');
 const history = require('./history');
 const voice = require('./voice');
+const contacts = require('./contacts');
 
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error('ERRORE: manca ANTHROPIC_API_KEY. Copia .env.example in .env e inserisci la tua chiave.');
@@ -99,8 +100,26 @@ client.on('disconnected', (reason) => console.error('[bot] Disconnesso:', reason
 
 client.on('ready', () => {
   console.log(`[bot] Pronto! Rispondo con il modello ${MODEL}.`);
-  console.log('[bot] Comandi (da inviare TU nella chat): !bot off, !bot on, !reset');
+  console.log('[bot] Comandi (da inviare TU nella chat): !bot off, !bot on, !reset, !cliente, !lead');
 });
+
+// Determina se un contatto è un allievo già seguito da Francesco o un lead
+// nuovo. Priorità: eccezione manuale (!cliente / !lead) > contatto salvato
+// in rubrica (isMyContact) = cliente > altrimenti lead. In caso di errore
+// nel controllo, si assume "lead": è il fallback più prudente, perché il
+// percorso di qualifica lead è lo scopo principale del bot.
+async function resolveContactStatus(msg, chatId) {
+  const manual = contacts.getOverride(chatId);
+  if (manual) return manual;
+
+  try {
+    const contact = await msg.getContact();
+    return contact.isMyContact ? 'cliente' : 'lead';
+  } catch (err) {
+    console.error('[bot] Impossibile verificare se il contatto è in rubrica, considerato lead:', err.message);
+    return 'lead';
+  }
+}
 
 function isPaused(chatId) {
   const until = pausedUntil.get(chatId);
@@ -145,8 +164,11 @@ client.on('message', async (msg) => {
     // Raccoglie i messaggi ravvicinati e risponde una volta sola (debounce)
     let entry = pending.get(chatId);
     if (!entry) {
-      entry = { timer: null, texts: [], wantsVoice: false };
+      entry = { timer: null, texts: [], wantsVoice: false, contactStatus: null };
       pending.set(chatId, entry);
+    }
+    if (!entry.contactStatus) {
+      entry.contactStatus = await resolveContactStatus(msg, chatId);
     }
     entry.wantsVoice = entry.wantsVoice || isVoiceMsg;
     entry.texts.push(body);
@@ -163,7 +185,11 @@ async function respond(chat, chatId) {
   if (!entry || entry.texts.length === 0) return;
   if (isPaused(chatId)) return;
 
-  const userText = entry.texts.join('\n');
+  const statusTag =
+    entry.contactStatus === 'cliente'
+      ? '[Contatto salvato in rubrica: probabile allievo già seguito da Francesco]'
+      : '[Contatto non salvato in rubrica: probabile nuovo lead]';
+  const userText = `${statusTag}\n${entry.texts.join('\n')}`;
   history.append(chatId, 'user', userText);
 
   const replyWithVoice =
@@ -246,6 +272,16 @@ async function handleOwnerMessage(msg) {
     history.clear(chatId);
     pausedUntil.delete(chatId);
     console.log(`[bot] Conversazione azzerata per ${chatId}`);
+    return;
+  }
+  if (body === '!cliente') {
+    contacts.setOverride(chatId, 'cliente');
+    console.log(`[bot] ${chatId} segnato manualmente come allievo/cliente`);
+    return;
+  }
+  if (body === '!lead') {
+    contacts.setOverride(chatId, 'lead');
+    console.log(`[bot] ${chatId} segnato manualmente come nuovo lead`);
     return;
   }
 

@@ -20,6 +20,10 @@ Bot che risponde automaticamente ai messaggi WhatsApp usando l'AI di Claude (Ant
 | `!bot off` | Disattiva il bot in quella chat (finché non lo riattivi) |
 | `!bot on`  | Riattiva il bot in quella chat                      |
 | `!reset`   | Azzera la memoria della conversazione in quella chat |
+| `!cliente` | Forza quella chat come allievo già seguito (salta le domande di scoperta) |
+| `!lead`    | Forza quella chat come nuovo lead (percorso di scoperta completo) |
+
+Di norma non serve usare `!cliente`/`!lead`: il bot riconosce da solo se il contatto è già salvato nella tua rubrica (allievo) o no (nuovo lead). Usali solo per correggere un caso eccezionale.
 
 ## Requisiti
 
