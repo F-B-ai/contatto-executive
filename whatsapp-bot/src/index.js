@@ -34,6 +34,7 @@ const FALLBACK_REPLY =
 const pausedUntil = new Map(); // chatId -> timestamp (Infinity = pausa manuale)
 const pending = new Map(); // chatId -> { timer, texts: [] }
 const botSentIds = new Set(); // id dei messaggi inviati dal bot (per non auto-pausarsi)
+const lastBotSendAt = new Map(); // chatId -> timestamp dell'ultimo invio del bot
 
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: path.join(__dirname, '..', '.wwebjs_auth') }),
@@ -139,7 +140,14 @@ client.on('message', async (msg) => {
     // Evitiamo msg.getChat(): su alcune versioni recenti di WhatsApp Web va
     // in errore "r: r" (getChatById) e fa cadere il messaggio. Ricaviamo tutto
     // da msg.from, che è già disponibile e non richiede chiamate interne.
-    if (msg.from.endsWith('@g.us')) return; // ignora i gruppi
+    // Rispondiamo solo alle chat 1:1 reali: saltiamo gruppi, canali/newsletter
+    // e broadcast, non sono conversazioni a cui Valentina deve rispondere.
+    if (
+      msg.from.endsWith('@g.us') ||
+      msg.from.endsWith('@newsletter') ||
+      msg.from.endsWith('@broadcast')
+    )
+      return;
 
     const chatId = msg.from;
     if (isPaused(chatId)) return;
@@ -219,22 +227,35 @@ async function respond(chatId) {
 
   history.append(chatId, 'assistant', reply);
 
+  // Segna che il bot sta per inviare in questa chat: serve a riconoscere il
+  // proprio messaggio quando ritorna come evento, evitando la falsa "presa in
+  // carico manuale" anche quando l'id dell'inviato non è disponibile.
+  lastBotSendAt.set(chatId, Date.now());
+
   try {
     let sent = null;
+    let voiceSent = false;
     if (replyWithVoice) {
       try {
         const audio = await voice.textToVoice(reply);
         const media = new MessageMedia(audio.mimetype, audio.base64);
         sent = await client.sendMessage(chatId, media, { sendAudioAsVoice: true });
+        voiceSent = true; // il vocale è partito (sent può essere undefined)
       } catch (err) {
         console.error('[bot] Sintesi vocale fallita, invio la risposta come testo:', err.message);
       }
     }
-    if (!sent) {
+    if (!voiceSent && !sent) {
       sent = await client.sendMessage(chatId, reply);
     }
-    botSentIds.add(sent.id._serialized);
-    console.log(`[bot] Risposto a ${chatId}${sent.hasMedia ? ' (vocale)' : ''}`);
+    // Con i nuovi indirizzi @lid la libreria a volte invia il messaggio ma
+    // restituisce undefined: registriamo l'id solo se disponibile, senza
+    // andare in errore. La falsa presa in carico è evitata da lastBotSendAt.
+    if (sent && sent.id && sent.id._serialized) {
+      botSentIds.add(sent.id._serialized);
+    }
+    lastBotSendAt.set(chatId, Date.now());
+    console.log(`[bot] Risposto a ${chatId}`);
   } catch (err) {
     console.error('[bot] Invio messaggio fallito:', err.message);
   }
@@ -259,7 +280,14 @@ async function handleOwnerMessage(msg) {
   }
 
   const chatId = msg.to;
-  if (!chatId || chatId === 'status@broadcast' || chatId.endsWith('@g.us')) return;
+  if (
+    !chatId ||
+    chatId === 'status@broadcast' ||
+    chatId.endsWith('@g.us') ||
+    chatId.endsWith('@newsletter') ||
+    chatId.endsWith('@broadcast')
+  )
+    return;
 
   const body = (msg.body || '').trim().toLowerCase();
 
@@ -289,6 +317,12 @@ async function handleOwnerMessage(msg) {
     console.log(`[bot] ${chatId} segnato manualmente come nuovo lead`);
     return;
   }
+
+  // Non scambiare per "presa in carico manuale" un messaggio inviato dal bot
+  // stesso pochi secondi fa: con gli indirizzi @lid non sempre riusciamo a
+  // registrarne l'id, quindi ci basiamo anche sul momento dell'ultimo invio.
+  const lastSend = lastBotSendAt.get(chatId);
+  if (lastSend && Date.now() - lastSend < 12000) return;
 
   // Hai risposto tu di persona: il bot si mette in pausa in questa chat
   pausedUntil.set(chatId, Date.now() + TAKEOVER_MS);
