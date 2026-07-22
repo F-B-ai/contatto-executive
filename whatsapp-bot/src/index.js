@@ -136,10 +136,12 @@ client.on('message', async (msg) => {
   try {
     if (msg.from === 'status@broadcast') return;
 
-    const chat = await msg.getChat();
-    if (chat.isGroup) return;
+    // Evitiamo msg.getChat(): su alcune versioni recenti di WhatsApp Web va
+    // in errore "r: r" (getChatById) e fa cadere il messaggio. Ricaviamo tutto
+    // da msg.from, che è già disponibile e non richiede chiamate interne.
+    if (msg.from.endsWith('@g.us')) return; // ignora i gruppi
 
-    const chatId = chat.id._serialized;
+    const chatId = msg.from;
     if (isPaused(chatId)) return;
 
     const isVoiceMsg = msg.type === 'ptt' || msg.type === 'audio';
@@ -173,13 +175,13 @@ client.on('message', async (msg) => {
     entry.wantsVoice = entry.wantsVoice || isVoiceMsg;
     entry.texts.push(body);
     if (entry.timer) clearTimeout(entry.timer);
-    entry.timer = setTimeout(() => respond(chat, chatId), DEBOUNCE_MS);
+    entry.timer = setTimeout(() => respond(chatId), DEBOUNCE_MS);
   } catch (err) {
     console.error('[bot] Errore nella gestione del messaggio:', err);
   }
 });
 
-async function respond(chat, chatId) {
+async function respond(chatId) {
   const entry = pending.get(chatId);
   pending.delete(chatId);
   if (!entry || entry.texts.length === 0) return;
@@ -197,7 +199,10 @@ async function respond(chat, chatId) {
     (VOICE_REPLIES === 'always' || (VOICE_REPLIES === 'auto' && entry.wantsVoice));
 
   try {
-    // indicatore "sta registrando…" / "sta scrivendo…" (solo cosmetico)
+    // indicatore "sta registrando…" / "sta scrivendo…" (solo cosmetico).
+    // Richiede l'oggetto chat, che può fallire per il bug getChatById: se
+    // succede lo ignoriamo, non è essenziale per rispondere.
+    const chat = await client.getChatById(chatId);
     if (replyWithVoice) await chat.sendStateRecording();
     else await chat.sendStateTyping();
   } catch {}
@@ -220,13 +225,13 @@ async function respond(chat, chatId) {
       try {
         const audio = await voice.textToVoice(reply);
         const media = new MessageMedia(audio.mimetype, audio.base64);
-        sent = await chat.sendMessage(media, { sendAudioAsVoice: true });
+        sent = await client.sendMessage(chatId, media, { sendAudioAsVoice: true });
       } catch (err) {
         console.error('[bot] Sintesi vocale fallita, invio la risposta come testo:', err.message);
       }
     }
     if (!sent) {
-      sent = await chat.sendMessage(reply);
+      sent = await client.sendMessage(chatId, reply);
     }
     botSentIds.add(sent.id._serialized);
     console.log(`[bot] Risposto a ${chatId}${sent.hasMedia ? ' (vocale)' : ''}`);
