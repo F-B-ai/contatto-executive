@@ -125,7 +125,7 @@ async function resolveContactStatus(msg, chatId) {
 // Scarica il media di un messaggio con qualche tentativo: la funzione interna
 // di WhatsApp Web a volte fallisce con l'errore "r" (stesso bug upstream di
 // getChatById), ma spesso al tentativo successivo va a buon fine.
-async function downloadMediaWithRetry(msg, attempts = 3) {
+async function downloadMediaWithRetry(msg, attempts = 5) {
   let lastErr;
   for (let i = 0; i < attempts; i++) {
     try {
@@ -135,7 +135,8 @@ async function downloadMediaWithRetry(msg, attempts = 3) {
     } catch (err) {
       lastErr = err;
     }
-    await new Promise((r) => setTimeout(r, 800));
+    // attesa crescente tra un tentativo e l'altro (0.6s, 1.2s, 1.8s, ...)
+    await new Promise((r) => setTimeout(r, 600 * (i + 1)));
   }
   throw lastErr || new Error('download del media non riuscito');
 }

@@ -12,6 +12,15 @@ const TTS_MODEL = process.env.ELEVENLABS_TTS_MODEL || 'eleven_multilingual_v2';
 const OUTPUT_FORMAT = 'opus_48000_64'; // Ogg/Opus: il formato dei vocali di WhatsApp
 const VOICE_MIMETYPE = 'audio/ogg; codecs=opus';
 
+// Impostazioni della voce: rendono il parlato più naturale ed espressivo.
+// - stability bassa = più espressiva e meno "robotica" (troppo bassa = instabile)
+// - similarity_boost alta = resta fedele al timbro della voce scelta
+// - style dà intonazione/emozione (0 = piatto, valori alti = più espressivo)
+// Tutte regolabili da .env se vuoi ritoccare il risultato.
+const VOICE_STABILITY = parseFloat(process.env.ELEVENLABS_STABILITY || '0.4');
+const VOICE_SIMILARITY = parseFloat(process.env.ELEVENLABS_SIMILARITY || '0.85');
+const VOICE_STYLE = parseFloat(process.env.ELEVENLABS_STYLE || '0.35');
+
 function isConfigured() {
   return Boolean(process.env.ELEVENLABS_API_KEY);
 }
@@ -34,7 +43,16 @@ async function textToVoice(text) {
         'xi-api-key': process.env.ELEVENLABS_API_KEY,
         'content-type': 'application/json',
       },
-      body: JSON.stringify({ text: sanitizeForSpeech(text), model_id: TTS_MODEL }),
+      body: JSON.stringify({
+        text: sanitizeForSpeech(text),
+        model_id: TTS_MODEL,
+        voice_settings: {
+          stability: VOICE_STABILITY,
+          similarity_boost: VOICE_SIMILARITY,
+          style: VOICE_STYLE,
+          use_speaker_boost: true,
+        },
+      }),
     }
   );
   if (!res.ok) {
