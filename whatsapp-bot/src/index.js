@@ -42,6 +42,12 @@ const FALLBACK_REPLY =
 const ASK_TO_WRITE =
   '[Il contatto ha inviato un messaggio vocale. Spiegagli con gentilezza che al momento non riesci ad ascoltare i vocali e chiedigli cortesemente di scriverti il messaggio in testo, così puoi aiutarlo subito.]';
 
+// All'avvio, rispondi ai messaggi rimasti in sospeso (arrivati mentre il bot
+// era spento). CATCHUP_HOURS = quanto indietro guardare (ore). Disattivabile
+// con CATCHUP_ON_START=off in .env.
+const CATCHUP_ON_START = (process.env.CATCHUP_ON_START || 'on').toLowerCase() !== 'off';
+const CATCHUP_HOURS = parseInt(process.env.CATCHUP_HOURS || '24', 10);
+
 // Stato in memoria
 const pausedUntil = new Map(); // chatId -> timestamp (Infinity = pausa manuale)
 const pending = new Map(); // chatId -> { timer, texts: [] }
@@ -114,6 +120,9 @@ client.on('disconnected', (reason) => console.error('[bot] Disconnesso:', reason
 client.on('ready', () => {
   console.log(`[bot] Pronto! Rispondo con il modello ${MODEL}.`);
   console.log('[bot] Comandi (da inviare TU nella chat): !bot off, !bot on, !reset, !cliente, !lead');
+  catchUpUnanswered().catch((err) =>
+    console.error('[bot] Recupero dei messaggi in sospeso fallito:', err.message)
+  );
 });
 
 // Determina se un contatto è un allievo già seguito da Francesco o un lead
@@ -302,6 +311,78 @@ async function respond(chatId) {
     console.log(`[bot] Risposto a ${chatId}`);
   } catch (err) {
     console.error('[bot] Invio messaggio fallito:', err.message);
+  }
+}
+
+// Converte un messaggio in arrivo nel testo da passare al modello.
+function messageToBody(msg) {
+  if (msg.type === 'ptt' || msg.type === 'audio') return ASK_TO_WRITE;
+  const text = (msg.body || '').trim();
+  return text || `[Il contatto ha inviato un contenuto di tipo "${msg.type}" che non puoi leggere]`;
+}
+
+// All'avvio risponde ai messaggi rimasti in sospeso: chat 1:1 con messaggi non
+// letti, il cui ultimo messaggio è del contatto e recente (entro CATCHUP_HOURS).
+// Tutto avvolto in try/catch: se WhatsApp Web non restituisce le chat (stesso
+// bug upstream), la funzione si limita a saltare senza bloccare il bot.
+async function catchUpUnanswered() {
+  if (!CATCHUP_ON_START) return;
+
+  let chats;
+  try {
+    chats = await client.getChats();
+  } catch (err) {
+    console.error('[bot] Non riesco a leggere le chat per gli arretrati:', err.message);
+    return;
+  }
+
+  const cutoff = Date.now() - CATCHUP_HOURS * 60 * 60 * 1000;
+  let answered = 0;
+
+  for (const chat of chats) {
+    try {
+      if (chat.isGroup) continue;
+      const chatId = chat.id && chat.id._serialized;
+      if (
+        !chatId ||
+        chatId.endsWith('@g.us') ||
+        chatId.endsWith('@newsletter') ||
+        chatId.endsWith('@broadcast')
+      )
+        continue;
+      if (!chat.unreadCount || chat.unreadCount < 1) continue;
+      if (isPaused(chatId)) continue;
+
+      const last = chat.lastMessage;
+      if (!last || last.fromMe) continue; // già risposto / ultimo msg nostro
+      if (last.timestamp && last.timestamp * 1000 < cutoff) continue; // troppo vecchio
+
+      let messages = [];
+      try {
+        messages = await chat.fetchMessages({ limit: Math.min(chat.unreadCount, 10) });
+      } catch {
+        messages = [last];
+      }
+      const inbound = messages.filter((m) => !m.fromMe);
+      if (!inbound.length) continue;
+
+      const status = await resolveContactStatus(last, chatId);
+      pending.set(chatId, {
+        timer: null,
+        texts: inbound.map(messageToBody),
+        wantsVoice: false,
+        contactStatus: status,
+      });
+      await respond(chatId);
+      answered++;
+      await new Promise((r) => setTimeout(r, 1500)); // piccola pausa tra le chat
+    } catch (err) {
+      console.error('[bot] Errore rispondendo a una chat in sospeso:', err.message);
+    }
+  }
+
+  if (answered > 0) {
+    console.log(`[bot] Risposto a ${answered} conversazione/i rimaste in sospeso.`);
   }
 }
 
