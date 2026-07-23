@@ -26,9 +26,18 @@ const DEBOUNCE_MS = parseInt(process.env.DEBOUNCE_SECONDS || '5', 10) * 1000;
 // Risposte vocali: 'auto' = a voce solo se il contatto manda vocali,
 // 'always' = sempre a voce, 'off' = solo testo
 const VOICE_REPLIES = (process.env.VOICE_REPLIES || 'auto').toLowerCase();
+// I vocali in ARRIVO sono affetti da un bug upstream di WhatsApp Web (il
+// download del media fallisce): finché non viene corretto, di default NON
+// proviamo a trascriverli e chiediamo al contatto di scrivere in testo.
+// Quando la libreria sarà aggiornata, imposta VOICE_TRANSCRIBE=on in .env.
+const VOICE_TRANSCRIBE = (process.env.VOICE_TRANSCRIBE || 'off').toLowerCase() === 'on';
 const TAKEOVER_MS = parseInt(process.env.TAKEOVER_MINUTES || '60', 10) * 60 * 1000;
 const FALLBACK_REPLY =
   'Scusami, in questo momento ho un problema tecnico 🙏 Riprova tra qualche minuto, oppure Francesco ti risponderà personalmente appena possibile.';
+// Nota interna passata al modello quando arriva un vocale che non possiamo
+// ascoltare: fa sì che Valentina chieda cortesemente di scrivere in testo.
+const ASK_TO_WRITE =
+  '[Il contatto ha inviato un messaggio vocale. Spiegagli con gentilezza che al momento non riesci ad ascoltare i vocali e chiedigli cortesemente di scriverti il messaggio in testo, così puoi aiutarlo subito.]';
 
 // Stato in memoria
 const pausedUntil = new Map(); // chatId -> timestamp (Infinity = pausa manuale)
@@ -173,18 +182,27 @@ client.on('message', async (msg) => {
 
     const isVoiceMsg = msg.type === 'ptt' || msg.type === 'audio';
     let body = (msg.body || '').trim();
+    let transcriptionOk = false;
 
-    if (isVoiceMsg && voice.isConfigured()) {
-      try {
-        const media = await downloadMediaWithRetry(msg);
-        const transcript = await voice.transcribeVoice(media.data, media.mimetype);
-        body = transcript
-          ? `[Messaggio vocale del contatto, trascrizione automatica] ${transcript}`
-          : '[Il contatto ha inviato un vocale ma non è stato possibile capirlo. Chiedigli con gentilezza di riscrivere il messaggio in testo.]';
-      } catch (err) {
-        console.error('[bot] Trascrizione del vocale fallita:', err.message);
-        body =
-          '[Il contatto ha inviato un messaggio vocale ma non è stato possibile ascoltarlo per un problema tecnico. Chiedigli con gentilezza e con tono cortese di riscrivere il messaggio in testo.]';
+    if (isVoiceMsg) {
+      if (voice.isConfigured() && VOICE_TRANSCRIBE) {
+        try {
+          const media = await downloadMediaWithRetry(msg);
+          const transcript = await voice.transcribeVoice(media.data, media.mimetype);
+          if (transcript) {
+            body = `[Messaggio vocale del contatto, trascrizione automatica] ${transcript}`;
+            transcriptionOk = true;
+          } else {
+            body = ASK_TO_WRITE;
+          }
+        } catch (err) {
+          console.error('[bot] Trascrizione del vocale fallita:', err.message);
+          body = ASK_TO_WRITE;
+        }
+      } else {
+        // Trascrizione disattivata (bug upstream sul download): rispondiamo
+        // subito chiedendo di scrivere, senza tentativi di scaricamento.
+        body = ASK_TO_WRITE;
       }
     }
     if (!body) {
@@ -200,7 +218,10 @@ client.on('message', async (msg) => {
     if (!entry.contactStatus) {
       entry.contactStatus = await resolveContactStatus(msg, chatId);
     }
-    entry.wantsVoice = entry.wantsVoice || isVoiceMsg;
+    // Rispondiamo a voce solo se abbiamo davvero capito il vocale del contatto.
+    // Se non riusciamo a leggerlo (bug upstream), meglio rispondere in testo
+    // chiedendo di scrivere, invece di mandare un vocale che dice "scrivimi".
+    entry.wantsVoice = entry.wantsVoice || transcriptionOk;
     entry.texts.push(body);
     if (entry.timer) clearTimeout(entry.timer);
     entry.timer = setTimeout(() => respond(chatId), DEBOUNCE_MS);
