@@ -122,6 +122,24 @@ async function resolveContactStatus(msg, chatId) {
   }
 }
 
+// Scarica il media di un messaggio con qualche tentativo: la funzione interna
+// di WhatsApp Web a volte fallisce con l'errore "r" (stesso bug upstream di
+// getChatById), ma spesso al tentativo successivo va a buon fine.
+async function downloadMediaWithRetry(msg, attempts = 3) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const media = await msg.downloadMedia();
+      if (media && media.data) return media;
+      lastErr = new Error('media vuoto');
+    } catch (err) {
+      lastErr = err;
+    }
+    await new Promise((r) => setTimeout(r, 800));
+  }
+  throw lastErr || new Error('download del media non riuscito');
+}
+
 function isPaused(chatId) {
   const until = pausedUntil.get(chatId);
   if (!until) return false;
@@ -157,14 +175,15 @@ client.on('message', async (msg) => {
 
     if (isVoiceMsg && voice.isConfigured()) {
       try {
-        const media = await msg.downloadMedia();
+        const media = await downloadMediaWithRetry(msg);
         const transcript = await voice.transcribeVoice(media.data, media.mimetype);
         body = transcript
           ? `[Messaggio vocale del contatto, trascrizione automatica] ${transcript}`
-          : '[Il contatto ha inviato un vocale, ma la trascrizione è risultata vuota]';
+          : '[Il contatto ha inviato un vocale ma non è stato possibile capirlo. Chiedigli con gentilezza di riscrivere il messaggio in testo.]';
       } catch (err) {
         console.error('[bot] Trascrizione del vocale fallita:', err.message);
-        body = '[Il contatto ha inviato un vocale che non è stato possibile trascrivere]';
+        body =
+          '[Il contatto ha inviato un messaggio vocale ma non è stato possibile ascoltarlo per un problema tecnico. Chiedigli con gentilezza e con tono cortese di riscrivere il messaggio in testo.]';
       }
     }
     if (!body) {
