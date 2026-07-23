@@ -25,7 +25,10 @@ const SYSTEM_PROMPT = fs.readFileSync(
 const DEBOUNCE_MS = parseInt(process.env.DEBOUNCE_SECONDS || '5', 10) * 1000;
 // Risposte vocali: 'auto' = a voce solo se il contatto manda vocali,
 // 'always' = sempre a voce, 'off' = solo testo
-const VOICE_REPLIES = (process.env.VOICE_REPLIES || 'auto').toLowerCase();
+// Default 'off': Valentina risponde solo in testo. Si può riattivare la voce
+// da .env con VOICE_REPLIES=auto (a voce se il contatto manda un vocale) o
+// VOICE_REPLIES=always (sempre a voce).
+const VOICE_REPLIES = (process.env.VOICE_REPLIES || 'off').toLowerCase();
 // I vocali in ARRIVO sono affetti da un bug upstream di WhatsApp Web (il
 // download del media fallisce): finché non viene corretto, di default NON
 // proviamo a trascriverli e chiediamo al contatto di scrivere in testo.
