@@ -291,30 +291,40 @@ async function handleOwnerMessage(msg) {
 
   const body = (msg.body || '').trim().toLowerCase();
 
-  if (body === '!bot off') {
-    pausedUntil.set(chatId, Infinity);
-    console.log(`[bot] Disattivato manualmente in ${chatId}`);
-    return;
-  }
-  if (body === '!bot on') {
-    pausedUntil.delete(chatId);
-    console.log(`[bot] Riattivato in ${chatId}`);
-    return;
-  }
-  if (body === '!reset') {
-    history.clear(chatId);
-    pausedUntil.delete(chatId);
-    console.log(`[bot] Conversazione azzerata per ${chatId}`);
-    return;
-  }
-  if (body === '!cliente') {
-    contacts.setOverride(chatId, 'cliente');
-    console.log(`[bot] ${chatId} segnato manualmente come allievo/cliente`);
-    return;
-  }
-  if (body === '!lead') {
-    contacts.setOverride(chatId, 'lead');
-    console.log(`[bot] ${chatId} segnato manualmente come nuovo lead`);
+  // Comandi del titolare: eseguono un'azione e basta (non fanno scattare la
+  // presa in carico manuale). Il messaggio-comando viene poi cancellato per
+  // tutti, così il contatto non lo vede in chat.
+  const commands = {
+    '!bot off': () => {
+      pausedUntil.set(chatId, Infinity);
+      console.log(`[bot] Disattivato manualmente in ${chatId}`);
+    },
+    '!bot on': () => {
+      pausedUntil.delete(chatId);
+      console.log(`[bot] Riattivato in ${chatId}`);
+    },
+    '!reset': () => {
+      history.clear(chatId);
+      pausedUntil.delete(chatId);
+      console.log(`[bot] Conversazione azzerata per ${chatId}`);
+    },
+    '!cliente': () => {
+      contacts.setOverride(chatId, 'cliente');
+      console.log(`[bot] ${chatId} segnato manualmente come allievo/cliente`);
+    },
+    '!lead': () => {
+      contacts.setOverride(chatId, 'lead');
+      console.log(`[bot] ${chatId} segnato manualmente come nuovo lead`);
+    },
+  };
+
+  if (commands[body]) {
+    commands[body]();
+    try {
+      await msg.delete(true); // cancella il comando per tutti
+    } catch (err) {
+      console.error('[bot] Non sono riuscito a cancellare il messaggio-comando:', err.message);
+    }
     return;
   }
 
