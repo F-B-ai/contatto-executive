@@ -12,6 +12,18 @@ set -e
 BRANCH="claude/claude-md-docs-fnsb3h"
 REPO="https://github.com/F-B-ai/contatto-executive.git"
 
+echo "== 0/5 Aggiungo swap se manca (evita crash di Chromium su VM con poca RAM) =="
+if [ "$(swapon --show | wc -l)" -eq 0 ] && [ ! -f /swapfile ]; then
+  fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  echo "   swap di 2GB creato."
+else
+  echo "   swap già presente, salto."
+fi
+
 echo "== 1/5 Aggiorno il sistema e installo Node.js 20 + git =="
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
