@@ -53,6 +53,24 @@ const pausedUntil = new Map(); // chatId -> timestamp (Infinity = pausa manuale)
 const pending = new Map(); // chatId -> { timer, texts: [] }
 const botSentIds = new Set(); // id dei messaggi inviati dal bot (per non auto-pausarsi)
 const lastBotSendAt = new Map(); // chatId -> timestamp dell'ultimo invio del bot
+const recentBotTexts = []; // { text, at } testi inviati di recente dal bot
+
+// Riconosce i messaggi del bot dal contenuto: robusto anche quando gli
+// indirizzi @lid non combaciano tra messaggio in arrivo e in uscita.
+function rememberBotText(text) {
+  const t = (text || '').trim();
+  if (!t) return;
+  recentBotTexts.push({ text: t, at: Date.now() });
+  const cutoff = Date.now() - 60000;
+  while (recentBotTexts.length && recentBotTexts[0].at < cutoff) recentBotTexts.shift();
+}
+
+function isRecentBotText(text) {
+  const t = (text || '').trim();
+  if (!t) return false;
+  const cutoff = Date.now() - 60000;
+  return recentBotTexts.some((e) => e.at >= cutoff && e.text === t);
+}
 
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: path.join(__dirname, '..', '.wwebjs_auth') }),
@@ -284,6 +302,7 @@ async function respond(chatId) {
   // proprio messaggio quando ritorna come evento, evitando la falsa "presa in
   // carico manuale" anche quando l'id dell'inviato non è disponibile.
   lastBotSendAt.set(chatId, Date.now());
+  rememberBotText(reply);
 
   try {
     let sent = null;
@@ -454,8 +473,10 @@ async function handleOwnerMessage(msg) {
   }
 
   // Non scambiare per "presa in carico manuale" un messaggio inviato dal bot
-  // stesso pochi secondi fa: con gli indirizzi @lid non sempre riusciamo a
-  // registrarne l'id, quindi ci basiamo anche sul momento dell'ultimo invio.
+  // stesso. Primo controllo, il più affidabile: il testo coincide con una
+  // risposta appena inviata dal bot (funziona anche se gli indirizzi @lid non
+  // combaciano). Secondo controllo: il bot ha inviato in questa chat da poco.
+  if (isRecentBotText(msg.body)) return;
   const lastSend = lastBotSendAt.get(chatId);
   if (lastSend && Date.now() - lastSend < 12000) return;
 
