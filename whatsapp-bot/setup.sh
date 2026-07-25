@@ -34,10 +34,11 @@ echo "== 2/5 Installo le librerie di sistema per Chromium (headless) =="
 # Best-effort: i nomi dei pacchetti variano un po' tra Ubuntu 22.04 e 24.04,
 # quindi non blocchiamo lo script se qualcuno non si trova.
 apt-get install -y \
-  ca-certificates fonts-liberation libatk-bridge2.0-0 libatk1.0-0 libcairo2 \
-  libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgbm1 libglib2.0-0 libgtk-3-0 \
-  libnspr4 libnss3 libpango-1.0-0 libx11-6 libxcomposite1 libxdamage1 libxext6 \
-  libxfixes3 libxrandr2 libxkbcommon0 libxshmfence1 xdg-utils 2>/dev/null || \
+  ca-certificates fonts-liberation libasound2 libatk-bridge2.0-0 libatk1.0-0 \
+  libatspi2.0-0 libcairo2 libcups2 libdbus-1-3 libdrm2 libexpat1 libfontconfig1 \
+  libgbm1 libglib2.0-0 libgtk-3-0 libnspr4 libnss3 libpango-1.0-0 libx11-6 \
+  libxcomposite1 libxdamage1 libxext6 libxfixes3 libxrandr2 libxkbcommon0 \
+  libxshmfence1 xdg-utils 2>/dev/null || \
   echo "   (alcune librerie non trovate: proseguo, le sistemo dopo se serve)"
 
 echo "== 3/5 Scarico il codice del bot (branch $BRANCH) =="
