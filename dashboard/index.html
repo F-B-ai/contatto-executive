@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Valentina" />
+  <meta name="theme-color" content="#C1121F" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <title>Valentina — Gestione Bot</title>
+  <style>
+    :root {
+      --rosso: #C1121F;
+      --rosso-scuro: #8f0d17;
+      --bg: #0f0f11;
+      --bg2: #1a1a1e;
+      --card: #212127;
+      --bordo: #2e2e36;
+      --testo: #f2f2f4;
+      --testo2: #a0a0aa;
+      --verde: #2ea043;
+      --giallo: #d29922;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0;
+      background: var(--bg);
+      color: var(--testo);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      height: 100%;
+      overscroll-behavior: none;
+    }
+    body { display: flex; flex-direction: column; min-height: 100dvh; }
+    button { font-family: inherit; cursor: pointer; }
+    input, textarea { font-family: inherit; }
+
+    /* Header */
+    header {
+      background: var(--rosso);
+      padding: calc(env(safe-area-inset-top) + 14px) 18px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10;
+      box-shadow: 0 2px 10px rgba(0,0,0,.3);
+    }
+    header .title { font-size: 20px; font-weight: 800; letter-spacing: .3px; }
+    header .sub { font-size: 12px; opacity: .85; margin-top: 2px; }
+    header .back {
+      background: rgba(0,0,0,.22); border: none; color: #fff;
+      width: 38px; height: 38px; border-radius: 10px; font-size: 20px;
+      display: flex; align-items: center; justify-content: center; margin-right: 12px;
+    }
+    header .logout {
+      background: rgba(0,0,0,.22); border: none; color: #fff;
+      padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    }
+    .hleft { display: flex; align-items: center; min-width: 0; }
+    .hleft .txt { min-width: 0; }
+    .hleft .txt .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .wrap { max-width: 640px; margin: 0 auto; padding: 16px; }
+
+    /* Screens */
+    .screen { display: none; }
+    .screen.active { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+    /* Login */
+    #screen-login { justify-content: center; }
+    .login-card {
+      background: var(--card); border: 1px solid var(--bordo);
+      border-radius: 16px; padding: 28px 22px; margin: 20px;
+      max-width: 400px; width: 100%; align-self: center;
+    }
+    .login-logo { text-align: center; margin-bottom: 22px; }
+    .login-logo .name { font-size: 34px; font-weight: 800; color: var(--rosso); }
+    .login-logo .role { font-size: 13px; color: var(--testo2); margin-top: 4px; }
+    label { display: block; font-size: 12px; color: var(--testo2); margin: 14px 0 6px; font-weight: 600; }
+    input[type=email], input[type=password], input[type=text] {
+      width: 100%; background: var(--bg2); border: 1px solid var(--bordo);
+      border-radius: 10px; padding: 13px 14px; color: var(--testo); font-size: 16px;
+    }
+    input:focus, textarea:focus { outline: none; border-color: var(--rosso); }
+    .btn {
+      width: 100%; background: var(--rosso); border: none; color: #fff;
+      padding: 14px; border-radius: 10px; font-size: 16px; font-weight: 700; margin-top: 20px;
+      transition: opacity .15s;
+    }
+    .btn:active { opacity: .8; }
+    .btn:disabled { opacity: .5; }
+    .btn-ghost { background: var(--bg2); border: 1px solid var(--bordo); color: var(--testo); }
+    .msg-err { color: #ff6b6b; font-size: 13px; margin-top: 14px; text-align: center; min-height: 18px; }
+
+    /* Conversations list */
+    .conv {
+      background: var(--card); border: 1px solid var(--bordo);
+      border-radius: 12px; padding: 15px; margin-bottom: 12px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .conv:active { border-color: var(--rosso); }
+    .conv-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .conv-name { font-weight: 700; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .badge { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 20px; white-space: nowrap; }
+    .badge.lead { background: rgba(46,160,67,.18); color: #4ac76a; }
+    .badge.client { background: rgba(88,166,255,.18); color: #6cb6ff; }
+    .badge.paused { background: rgba(210,153,34,.18); color: #e0b341; }
+    .conv-last { font-size: 14px; color: var(--testo2); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .conv-foot { display: flex; justify-content: space-between; font-size: 11px; color: var(--testo2); padding-top: 6px; border-top: 1px solid var(--bordo); }
+
+    .empty { text-align: center; padding: 60px 20px; color: var(--testo2); }
+    .empty .big { font-size: 17px; font-weight: 600; margin-bottom: 8px; color: var(--testo); }
+
+    /* Conversation detail */
+    #screen-chat { min-height: 0; }
+    #messages { flex: 1; overflow-y: auto; padding: 16px; -webkit-overflow-scrolling: touch; }
+    .bubble {
+      max-width: 82%; padding: 10px 13px; border-radius: 14px; margin-bottom: 10px;
+      font-size: 15px; line-height: 1.35; word-wrap: break-word;
+    }
+    .bubble.user { background: var(--bg2); border: 1px solid var(--bordo); margin-right: auto; border-bottom-left-radius: 4px; }
+    .bubble.bot { background: var(--rosso); color: #fff; margin-left: auto; border-bottom-right-radius: 4px; }
+    .bubble .time { font-size: 10px; opacity: .65; margin-top: 4px; }
+
+    .controls { display: flex; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--bordo); background: var(--bg2); }
+    .controls button { flex: 1; padding: 11px; border-radius: 9px; font-size: 14px; font-weight: 700; border: 1px solid var(--bordo); background: var(--card); color: var(--testo); }
+    .controls .on { background: var(--rosso); border-color: var(--rosso); color: #fff; }
+
+    .composer { display: flex; gap: 8px; padding: 10px 12px calc(env(safe-area-inset-bottom) + 10px); border-top: 1px solid var(--bordo); background: var(--bg2); }
+    .composer textarea { flex: 1; background: var(--card); border: 1px solid var(--bordo); border-radius: 10px; padding: 11px 13px; color: var(--testo); font-size: 15px; resize: none; max-height: 100px; }
+    .composer .send { background: var(--rosso); border: none; color: #fff; border-radius: 10px; padding: 0 18px; font-weight: 700; font-size: 15px; }
+
+    /* Loading */
+    .spinner { width: 34px; height: 34px; border: 3px solid var(--bordo); border-top-color: var(--rosso); border-radius: 50%; animation: spin .8s linear infinite; margin: 40px auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toast { position: fixed; bottom: calc(env(safe-area-inset-bottom) + 20px); left: 50%; transform: translateX(-50%); background: #000; color: #fff; padding: 12px 20px; border-radius: 30px; font-size: 14px; z-index: 100; opacity: 0; transition: opacity .25s; pointer-events: none; box-shadow: 0 4px 20px rgba(0,0,0,.4); }
+    .toast.show { opacity: 1; }
+
+    /* Config banner */
+    .config-warn { background: rgba(210,153,34,.12); border: 1px solid rgba(210,153,34,.4); color: #e0b341; border-radius: 12px; padding: 14px; font-size: 13px; line-height: 1.5; margin-bottom: 16px; }
+    .config-warn b { color: #f0c862; }
+    .config-warn code { background: rgba(0,0,0,.3); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header id="header">
+    <div class="hleft">
+      <button class="back" id="btn-back" style="display:none" aria-label="Indietro">‹</button>
+      <div class="txt">
+        <div class="title" id="h-title">Valentina</div>
+        <div class="sub" id="h-sub">Gestione bot</div>
+      </div>
+    </div>
+    <button class="logout" id="btn-logout" style="display:none">Esci</button>
+  </header>
+
+  <main>
+    <!-- LOGIN -->
+    <section id="screen-login" class="screen active">
+      <div class="login-card">
+        <div class="login-logo">
+          <div class="name">Valentina</div>
+          <div class="role">l'assistente di Francesco</div>
+        </div>
+        <div id="config-banner"></div>
+        <label for="email">Email</label>
+        <input type="email" id="email" autocomplete="username" placeholder="tu@esempio.com" inputmode="email" />
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password" placeholder="••••••••" />
+        <button class="btn" id="btn-login">Accedi</button>
+        <div class="msg-err" id="login-err"></div>
+      </div>
+    </section>
+
+    <!-- LISTA CONVERSAZIONI -->
+    <section id="screen-list" class="screen">
+      <div class="wrap" id="list-wrap">
+        <div class="spinner"></div>
+      </div>
+    </section>
+
+    <!-- DETTAGLIO CHAT -->
+    <section id="screen-chat" class="screen">
+      <div id="messages"></div>
+      <div class="controls">
+        <button id="ctrl-off">⏸ Metti in pausa</button>
+        <button id="ctrl-on" class="on">▶ Riattiva</button>
+      </div>
+      <div class="composer">
+        <textarea id="composer-input" rows="1" placeholder="Scrivi un messaggio di prova…"></textarea>
+        <button class="send" id="composer-send">Invia</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore, collection, query, where, orderBy, onSnapshot, addDoc, doc, updateDoc, increment, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // ─────────────────────────────────────────────────────────────
+    // CONFIGURAZIONE FIREBASE
+    // Sostituisci i valori qui sotto con quelli del tuo progetto Firebase.
+    // Li trovi su: console.firebase.google.com → Impostazioni progetto → Le tue app (Web)
+    // ─────────────────────────────────────────────────────────────
+    const firebaseConfig = {
+      apiKey: "INSERISCI_API_KEY",
+      authDomain: "INSERISCI_AUTH_DOMAIN",
+      projectId: "INSERISCI_PROJECT_ID",
+      storageBucket: "INSERISCI_STORAGE_BUCKET",
+      messagingSenderId: "INSERISCI_MESSAGING_SENDER_ID",
+      appId: "INSERISCI_APP_ID",
+    };
+
+    const isConfigured = !firebaseConfig.apiKey.startsWith("INSERISCI");
+
+    // ── UI helpers ────────────────────────────────────────────────
+    const $ = (id) => document.getElementById(id);
+    const screens = { login: $("screen-login"), list: $("screen-list"), chat: $("screen-chat") };
+    function showScreen(name) {
+      Object.values(screens).forEach(s => s.classList.remove("active"));
+      screens[name].classList.add("active");
+      $("btn-back").style.display = name === "chat" ? "flex" : "none";
+      $("btn-logout").style.display = name === "login" ? "none" : "inline-block";
+    }
+    let toastTimer;
+    function toast(text) {
+      const t = $("toast"); t.textContent = text; t.classList.add("show");
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+    }
+    function fmtTime(ts) {
+      if (!ts) return "";
+      const d = ts.toDate ? ts.toDate() : new Date(ts.seconds ? ts.seconds * 1000 : ts);
+      return d.toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+    }
+    function fmtClock(ts) {
+      if (!ts) return "";
+      const d = ts.toDate ? ts.toDate() : new Date(ts.seconds ? ts.seconds * 1000 : ts);
+      return d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+    }
+    function badgeFor(status) {
+      if (status === "client") return '<span class="badge client">Cliente</span>';
+      if (status === "paused") return '<span class="badge paused">In pausa</span>';
+      return '<span class="badge lead">Nuovo lead</span>';
+    }
+
+    // ── Se Firebase non è configurato, mostra istruzioni ─────────
+    if (!isConfigured) {
+      $("config-banner").innerHTML =
+        '<div class="config-warn">⚠️ <b>Firebase non ancora configurato.</b><br>' +
+        'Apri il file <code>dashboard/index.html</code> e sostituisci i valori <code>INSERISCI_…</code> ' +
+        'con le credenziali del tuo progetto Firebase. Trovi la guida in <code>dashboard/GUIDA.md</code>.</div>';
+      $("btn-login").disabled = true;
+    }
+
+    // ── Firebase init ─────────────────────────────────────────────
+    let auth, db;
+    if (isConfigured) {
+      const app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      setPersistence(auth, browserLocalPersistence).catch(() => {});
+
+      onAuthStateChanged(auth, (user) => {
+        if (user) { showScreen("list"); startConversations(); }
+        else { showScreen("login"); }
+      });
+    }
+
+    // ── Login ─────────────────────────────────────────────────────
+    async function doLogin() {
+      const email = $("email").value.trim();
+      const pw = $("password").value;
+      $("login-err").textContent = "";
+      if (!email || !pw) { $("login-err").textContent = "Inserisci email e password."; return; }
+      $("btn-login").disabled = true; $("btn-login").textContent = "Accesso…";
+      try {
+        await signInWithEmailAndPassword(auth, email, pw);
+      } catch (e) {
+        const map = {
+          "auth/invalid-credential": "Email o password errati.",
+          "auth/invalid-email": "Email non valida.",
+          "auth/user-not-found": "Utente non trovato.",
+          "auth/wrong-password": "Password errata.",
+          "auth/too-many-requests": "Troppi tentativi. Riprova tra poco.",
+        };
+        $("login-err").textContent = map[e.code] || ("Errore: " + e.message);
+      } finally {
+        $("btn-login").disabled = false; $("btn-login").textContent = "Accedi";
+      }
+    }
+    $("btn-login").addEventListener("click", doLogin);
+    $("password").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+
+    $("btn-logout").addEventListener("click", async () => {
+      if (unsubList) unsubList();
+      if (unsubChat) unsubChat();
+      await signOut(auth);
+    });
+
+    // ── Lista conversazioni (realtime) ────────────────────────────
+    let unsubList = null;
+    function startConversations() {
+      $("h-title").textContent = "Conversazioni";
+      $("h-sub").textContent = "Aggiornamento in tempo reale";
+      const wrap = $("list-wrap");
+      wrap.innerHTML = '<div class="spinner"></div>';
+      if (unsubList) unsubList();
+      const q = query(collection(db, "bot_conversations"), orderBy("lastMessageTime", "desc"));
+      unsubList = onSnapshot(q, (snap) => {
+        if (snap.empty) {
+          wrap.innerHTML = '<div class="empty"><div class="big">Nessuna conversazione</div>' +
+            'Le chat gestite dal bot appariranno qui appena arriva il primo messaggio.</div>';
+          $("h-sub").textContent = "0 conversazioni";
+          return;
+        }
+        $("h-sub").textContent = snap.size + " conversazioni";
+        let html = "";
+        snap.forEach((d) => {
+          const c = d.data();
+          html += '<div class="conv" data-id="' + d.id + '" data-name="' + escapeAttr(c.contactName || "Contatto") + '">' +
+            '<div class="conv-top"><div class="conv-name">' + escapeHtml(c.contactName || "Contatto") + '</div>' + badgeFor(c.status) + '</div>' +
+            '<div class="conv-last">' + escapeHtml(c.lastMessage || "") + '</div>' +
+            '<div class="conv-foot"><span>' + (c.messageCount || 0) + ' messaggi</span><span>' + fmtTime(c.lastMessageTime) + '</span></div>' +
+            '</div>';
+        });
+        wrap.innerHTML = html;
+        wrap.querySelectorAll(".conv").forEach((el) => {
+          el.addEventListener("click", () => openChat(el.dataset.id, el.dataset.name));
+        });
+      }, (err) => {
+        wrap.innerHTML = '<div class="empty"><div class="big">Errore di caricamento</div>' + escapeHtml(err.message) + '</div>';
+      });
+    }
+
+    // ── Dettaglio chat (realtime) ─────────────────────────────────
+    let unsubChat = null;
+    let currentChatId = null;
+    function openChat(id, name) {
+      currentChatId = id;
+      showScreen("chat");
+      $("h-title").textContent = name;
+      $("h-sub").textContent = "Conversazione";
+      const box = $("messages");
+      box.innerHTML = '<div class="spinner"></div>';
+      if (unsubChat) unsubChat();
+      const q = query(collection(db, "bot_conversations", id, "messages"), orderBy("timestamp", "asc"));
+      unsubChat = onSnapshot(q, (snap) => {
+        if (snap.empty) { box.innerHTML = '<div class="empty">Nessun messaggio.</div>'; return; }
+        let html = "";
+        snap.forEach((d) => {
+          const m = d.data();
+          const who = m.sender === "bot" ? "bot" : "user";
+          html += '<div class="bubble ' + who + '">' + escapeHtml(m.text || "") +
+            '<div class="time">' + fmtClock(m.timestamp) + '</div></div>';
+        });
+        box.innerHTML = html;
+        box.scrollTop = box.scrollHeight;
+      });
+    }
+    $("btn-back").addEventListener("click", () => {
+      if (unsubChat) { unsubChat(); unsubChat = null; }
+      currentChatId = null;
+      showScreen("list");
+      $("h-title").textContent = "Conversazioni";
+    });
+
+    // ── Invio messaggio di prova ──────────────────────────────────
+    async function sendMessage() {
+      const input = $("composer-input");
+      const text = input.value.trim();
+      if (!text || !currentChatId) return;
+      input.value = "";
+      autoGrow(input);
+      try {
+        await addDoc(collection(db, "bot_conversations", currentChatId, "messages"), {
+          sender: "user", text, timestamp: serverTimestamp(),
+        });
+        await updateDoc(doc(db, "bot_conversations", currentChatId), {
+          lastMessage: text, lastMessageTime: serverTimestamp(), messageCount: increment(1),
+        });
+      } catch (e) { toast("Errore invio: " + e.message); }
+    }
+    $("composer-send").addEventListener("click", sendMessage);
+    $("composer-input").addEventListener("input", (e) => autoGrow(e.target));
+    function autoGrow(el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 100) + "px"; }
+
+    // ── Comandi bot (pausa / riattiva) ────────────────────────────
+    async function botCommand(action) {
+      try {
+        await addDoc(collection(db, "bot_commands"), {
+          action, chatId: currentChatId || null, status: "pending", createdAt: serverTimestamp(),
+        });
+        toast(action === "off" ? "Bot messo in pausa" : "Bot riattivato");
+      } catch (e) { toast("Errore: " + e.message); }
+    }
+    $("ctrl-off").addEventListener("click", () => botCommand("off"));
+    $("ctrl-on").addEventListener("click", () => botCommand("on"));
+
+    // ── Escaping ──────────────────────────────────────────────────
+    function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+    function escapeAttr(s) { return escapeHtml(s); }
+  </script>
+</body>
+</html>
