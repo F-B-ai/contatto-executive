@@ -86,15 +86,28 @@ const client = new Client({
     // tenerla nascosta: utile per capire a video perché l'avvio si blocca.
     headless: process.env.PUPPETEER_HEADLESS !== 'false',
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+    // Timeout del protocollo più alto (default puppeteer 180s). Su VM con poca
+    // RAM (es. 1 GB) l'avvio di Chromium usa la swap ed è lento: senza questo
+    // margine l'inject di whatsapp-web.js va in "ProtocolError: Runtime.evaluate
+    // timed out" e il bot crasha subito dopo l'autenticazione. Regolabile da
+    // .env con PUPPETEER_PROTOCOL_TIMEOUT (millisecondi).
+    protocolTimeout: parseInt(process.env.PUPPETEER_PROTOCOL_TIMEOUT || '300000', 10),
     // Flag extra oltre a --no-sandbox: risolvono crash di Chromium tipici su
     // Windows (GPU/driver problematici) che si manifestano come "Execution
-    // context was destroyed" subito dopo l'avvio.
+    // context was destroyed" subito dopo l'avvio; gli ultimi riducono il
+    // consumo di memoria su server piccoli (1 GB di RAM).
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
       '--disable-gpu',
       '--disable-accelerated-2d-canvas',
+      '--disable-extensions',
+      '--disable-background-networking',
+      '--disable-background-timer-throttling',
+      '--disable-renderer-backgrounding',
+      '--disable-features=site-per-process,TranslateUI',
+      '--js-flags=--max-old-space-size=512',
     ],
   },
 });
